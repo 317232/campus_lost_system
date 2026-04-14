@@ -17,15 +17,9 @@ public class JwtUtils {
     @Value("${app.jwt.secret}")
     private String secret;
 
-    // private static final String SECRET = "CampusLostAndFoundSystemSuperSecretKey2026!";
-
-    // 实际项目中，建议把这个密钥配置在 application.yml 中 (@Value)
-    // 注意：HS256 算法要求密钥长度至少为 256 bits (即 32 个英文字符)
-
-    // private static final String SECRET = "CampusLostAndFoundSystemSuperSecretKey2026!";
-    
-    // 生成标准的 SecretKey 对象
-    private final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    private SecretKey getSecretKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     // Access Token 过期时间：2小时
     private final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 60 * 2;
@@ -42,7 +36,7 @@ public class JwtUtils {
                 .claim("studentNo", studentNo)
                 .issuedAt(new Date())               // 0.12.x: setIssuedAt -> issuedAt
                 .expiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION)) // setExpiration -> expiration
-                .signWith(SECRET_KEY)               // 传入 SecretKey
+                .signWith(getSecretKey())               // 传入 SecretKey
                 .compact();
     }
 
@@ -54,7 +48,7 @@ public class JwtUtils {
                 .subject(String.valueOf(userId))
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION))
-                .signWith(SECRET_KEY)
+                .signWith(getSecretKey())
                 .compact();
     }
 
@@ -63,7 +57,7 @@ public class JwtUtils {
      */
     public Claims parseToken(String token) {
         return Jwts.parser()                        // 0.12.x: 恢复使用 parser()
-                .verifyWith(SECRET_KEY)             // 0.12.x: setSigningKey -> verifyWith
+                .verifyWith(getSecretKey())             // 0.12.x: setSigningKey -> verifyWith
                 .build()
                 .parseSignedClaims(token)           // 0.12.x: parseClaimsJws -> parseSignedClaims
                 .getPayload();                      // 0.12.x: getBody -> getPayload

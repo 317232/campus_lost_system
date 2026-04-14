@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.mybatis.spring.annotation.MapperScan;
 
-@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
+@SpringBootApplication
 @EnableConfigurationProperties(JwtProperties.class)
 @MapperScan("com.campus.lostfound.mapper")
 public class LostFoundApplication {
