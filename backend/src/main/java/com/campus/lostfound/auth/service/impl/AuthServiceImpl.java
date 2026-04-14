@@ -1,0 +1,180 @@
+package com.campus.lostfound.auth.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.campus.lostfound.auth.service.AuthService;
+import com.campus.lostfound.common.api.ResultCode;
+import com.campus.lostfound.common.exception.BusinessException;
+import com.campus.lostfound.common.utils.JwtUtils;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.campus.lostfound.auth.dto.AuthDTO;
+import com.campus.lostfound.domain.entity.User;
+import com.campus.lostfound.mapper.UserMapper;
+import com.campus.lostfound.common.utils.EmailUtils;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService{
+    // 这里可以实现具体的认证逻辑，例如使用JWT、OAuth2等方式进行用户认证和授权
+    // 例如，可以实现一个方法来验证用户的登录信息，并生成相应的令牌
+
+    private final UserMapper userMapper;
+    private final JwtUtils jwtUtils;
+    private final EmailUtils emailUtils;
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void register(AuthDTO.RegisterReq req) {
+        // 1. 检查学号是否已被注册
+        boolean exists = userMapper.exists(new LambdaQueryWrapper<User>()
+                .eq(User::getStudentNo, req.getStudentNo()));
+        if (exists) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "该学号已被注册");
+        }
+
+        // 2. 密码加密 (BCrypt)
+        String hashedPassword = BCrypt.hashpw(req.getPassword(), BCrypt.gensalt());
+
+        // 3. 构建并保存用户实体
+        User user = new User();
+        user.setStudentNo(req.getStudentNo());
+        user.setName(req.getName());
+        user.setPasswordHash(hashedPassword);
+        user.setEmail(req.getEmail());
+        user.setPhone(req.getPhone());
+        user.setStatus("ACTIVE"); // 默认激活状态
+
+        userMapper.insert(user);
+        log.info("用户注册成功，学号: {}", req.getStudentNo());
+    }
+
+    @Override
+    public AuthDTO.LoginResp login(AuthDTO.LoginReq req) {
+        // 1. 根据账号查询用户（支持学号、邮箱或手机号登录）
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getStudentNo, req.getAccount())
+                .or().eq(User::getEmail, req.getAccount())
+                .or().eq(User::getPhone, req.getAccount()));
+
+        if (user == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "账号不存在");
+        }
+
+        // 2. 检查用户状态
+        if (!"ACTIVE".equals(user.getStatus())) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "账号已被禁用，请联系管理员");
+        }
+
+        // 3. 校验密码
+        if (!BCrypt.checkpw(req.getPassword(), user.getPasswordHash())) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "密码错误");
+        }
+
+        // 4. 签发 JWT
+        String accessToken = jwtUtils.generateAccessToken(user.getId(), user.getStudentNo());
+        String refreshToken = jwtUtils.generateRefreshToken(user.getId());
+
+        // 5. 封装返回对象
+        AuthDTO.LoginResp resp = new AuthDTO.LoginResp();
+        resp.setAccessToken(accessToken);
+        resp.setRefreshToken(refreshToken);
+        resp.setUserId(user.getId());
+        resp.setName(user.getName());
+        resp.setAvatarUrl(user.getAvatarUrl());
+
+        log.info("用户登录成功，学号: {}", user.getStudentNo());
+        return resp;
+    }
+
+    @Override
+    public void logout(String token) {
+        // 实际企业级项目中，应该将提取出的 token 放入 Redis 黑名单中，直到其自然过期
+        // 由于 JWT 是无状态的，如果不加 Redis，只能在前端清除本地存储
+        log.info("用户请求登出，Token 已作废处理（需配合 Redis 黑名单实现）");
+    }
+
+    @Override
+    public AuthDTO.LoginResp refreshToken(String refreshToken) {
+        try {
+            // 1. 解析 Refresh Token 获取 userId
+            Long userId = jwtUtils.getUserIdFromToken(refreshToken);
+
+            // 2. 查询用户确认存在且状态正常
+            User user = userMapper.selectById(userId);
+            if (user == null || !"ACTIVE".equals(user.getStatus())) {
+                throw new BusinessException(ResultCode.UNAUTHORIZED, "用户状态异常，请重新登录");
+            }
+
+            // 3. 重新签发双 Token
+            String newAccessToken = jwtUtils.generateAccessToken(user.getId(), user.getStudentNo());
+            String newRefreshToken = jwtUtils.generateRefreshToken(user.getId());
+
+            AuthDTO.LoginResp resp = new AuthDTO.LoginResp();
+            resp.setAccessToken(newAccessToken);
+            resp.setRefreshToken(newRefreshToken);
+            resp.setUserId(user.getId());
+            resp.setName(user.getName());
+            resp.setAvatarUrl(user.getAvatarUrl());
+
+            return resp;
+        } catch (Exception e) {
+            // 解析失败（比如 Token 过期或被篡改）
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "刷新令牌无效或已过期，请重新登录");
+        }
+    }
+
+    @Override
+    public void forgotPassword(AuthDTO.ForgotPasswordReq req) {
+
+        // 1. 验证用户是否存在
+        boolean exists = userMapper.exists(new LambdaQueryWrapper<User>()
+                .eq(User::getStudentNo, req.getAccount())
+                .or().eq(User::getEmail, req.getAccount()));
+                
+        if (!exists) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "该账号不存在");
+        }
+
+        // 2. 生成 6 位随机验证码
+        String verifyCode = String.valueOf((int) ((Math.random() * 9 + 1) * 100000));
+        
+        // 3. TODO: 将 verifyCode 存入 Redis，设置 5 分钟过期时间，Key 为 "reset_pwd:" + account
+        // redisTemplate.opsForValue().set("reset_pwd:" + req.getAccount(), verifyCode, 5, TimeUnit.MINUTES);
+        
+        // 4. TODO: 调用邮件服务发送验证码
+        emailUtils.sendVerifyCode(req.getAccount(), verifyCode);
+    }
+
+    @Override
+    public void resetPassword(AuthDTO.ResetPasswordReq req) {
+        // 1. TODO: 从 Redis 获取对应的验证码并比对
+        // String cachedCode = redisTemplate.opsForValue().get("reset_pwd:" + req.getAccount());
+        // if (cachedCode == null || !cachedCode.equals(req.getVerifyCode())) {
+        //     throw new BusinessException(ResultCode.BAD_REQUEST, "验证码错误或已过期");
+        // }
+
+        // 2. 查询用户
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getStudentNo, req.getAccount())
+                .or().eq(User::getEmail, req.getAccount()));
+
+        if (user == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "用户不存在");
+        }
+
+        // 3. 修改密码并更新
+        String hashedNewPassword = BCrypt.hashpw(req.getNewPassword(), BCrypt.gensalt());
+        user.setPasswordHash(hashedNewPassword);
+        userMapper.updateById(user);
+
+        // 4. TODO: 删除 Redis 中的验证码缓存
+        // redisTemplate.delete("reset_pwd:" + req.getAccount());
+        
+        log.info("账号 {} 密码重置成功", req.getAccount());
+    }
+}

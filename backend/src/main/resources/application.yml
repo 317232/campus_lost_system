@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: lostfound-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/lostfound?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 12345678
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  mail:
+    host: smtp.qq.com # QQ邮箱的SMTP服务器地址 (如果是163，则是 smtp.163.com)
+    port: 465 # SSL协议端口通常是465
+    username: mwo_m9570@qq.com # 你的真实邮箱地址
+    password: uuqyqiriiatzdgbd # 你的邮箱授权码（非登录密码！）
+    protocol: smtps
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+            required: true
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 打印 SQL（开发时开启）
+  global-config:
+    db-config:
+      id-type: auto
+server:
+  port: 8080
+
+app:
+  security:
+    login-failure-captcha-threshold: 3
+    token-prefix: demo-jwt
+  jwt:
+    issuer: campus-lostfound
+    secret: Y2FtcHVzLWxvc3QtZm91bmQtY291cnNld29yay1kZW1vLXNlY3JldC1rZXktMjAyNg==
+    expires-in-seconds: 7200
