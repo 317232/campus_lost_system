@@ -1,60 +1,250 @@
 package com.campus.lostfound.auth;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import com.campus.lostfound.auth.AuthRequests.ForgotPasswordRequest;
-import com.campus.lostfound.auth.AuthRequests.LoginRequest;
-import com.campus.lostfound.auth.AuthRequests.ResetPasswordRequest;
-import com.campus.lostfound.config.JwtProperties;
-import com.campus.lostfound.demo.DemoDtos.AuthToken;
-import com.campus.lostfound.security.JwtTokenProvider;
+import com.campus.lostfound.auth.dto.AuthDTO.LoginReq;
+import com.campus.lostfound.auth.dto.AuthDTO.LoginResp;
+import com.campus.lostfound.auth.dto.AuthDTO.RegisterReq;
+import com.campus.lostfound.auth.dto.AuthDTO.ResetPasswordReq;
+import com.campus.lostfound.auth.dto.AuthDTO.ForgotPasswordReq;
+import com.campus.lostfound.auth.service.impl.AuthServiceImpl;
+import com.campus.lostfound.common.api.ResultCode;
+import com.campus.lostfound.common.exception.BusinessException;
+import com.campus.lostfound.domain.entity.User;
+import com.campus.lostfound.mapper.UserMapper;
+import com.campus.lostfound.common.utils.JwtUtils;
+import com.campus.lostfound.common.utils.EmailUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mindrot.jbcrypt.BCrypt;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
 class AuthDemoServiceTest {
 
-    private AuthDemoService authDemoService;
+    @Mock
+    private UserMapper userMapper;
+
+    @Mock
+    private JwtUtils jwtUtils;
+
+    @Mock
+    private EmailUtils emailUtils;
+
+    @InjectMocks
+    private AuthServiceImpl authService;
+
+    private User testUser;
 
     @BeforeEach
     void setUp() {
-        authDemoService = new AuthDemoService(
-            new JwtTokenProvider(new JwtProperties()),
-            new BCryptPasswordEncoder(),
-            3
-        );
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setStudentNo("2023110421");
+        testUser.setName("测试用户");
+        testUser.setPasswordHash(BCrypt.hashpw("password123", BCrypt.gensalt()));
+        testUser.setEmail("test@example.com");
+        testUser.setPhone("18800001111");
+        testUser.setStatus("ACTIVE");
     }
 
     @Test
-    void loginRequiresCaptchaAfterThreeFailures() {
-        assertThrows(IllegalArgumentException.class,
-            () -> authDemoService.login(new LoginRequest("2023110421", "wrong-pass", null)));
-        assertThrows(IllegalArgumentException.class,
-            () -> authDemoService.login(new LoginRequest("2023110421", "wrong-pass", null)));
+    void register_Success() {
+        RegisterReq req = new RegisterReq();
+        req.setStudentNo("2023110422");
+        req.setName("新用户");
+        req.setPassword("password123");
+        req.setEmail("new@example.com");
 
-        IllegalArgumentException thirdFailure = assertThrows(IllegalArgumentException.class,
-            () -> authDemoService.login(new LoginRequest("2023110421", "wrong-pass", null)));
-        assertTrue(thirdFailure.getMessage().contains("验证码"));
+        when(userMapper.exists(any())).thenReturn(false);
+        when(userMapper.insert(any(User.class))).thenReturn(1);
 
-        IllegalArgumentException missingCaptcha = assertThrows(IllegalArgumentException.class,
-            () -> authDemoService.login(new LoginRequest("2023110421", "123456", null)));
-        assertTrue(missingCaptcha.getMessage().contains("验证码"));
+        assertDoesNotThrow(() -> authService.register(req));
 
-        AuthToken token = authDemoService.login(new LoginRequest("2023110421", "123456", "1234"));
-        assertNotNull(token.token());
-        assertFalse(token.token().isBlank());
+        verify(userMapper).exists(any());
+        verify(userMapper).insert(any(User.class));
     }
 
     @Test
-    void forgotPasswordVerificationAllowsResetWithoutDatabaseTable() {
-        authDemoService.forgotPassword(new ForgotPasswordRequest("18800001111", "2023110421", "lin@example.com"));
-        authDemoService.resetPassword(new ResetPasswordRequest("18800001111", "new-password-123"));
+    void register_StudentNoAlreadyExists_ThrowsException() {
+        RegisterReq req = new RegisterReq();
+        req.setStudentNo("2023110421");
+        req.setName("新用户");
+        req.setPassword("password123");
+        req.setEmail("new@example.com");
 
-        AuthToken token = authDemoService.login(new LoginRequest("lin@example.com", "new-password-123", null));
-        assertNotNull(token.token());
-        assertFalse(token.token().isBlank());
+        when(userMapper.exists(any())).thenReturn(true);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+            () -> authService.register(req));
+
+        assertEquals(ResultCode.BAD_REQUEST, exception.getResultCode());
+        assertTrue(exception.getMessage().contains("该学号已被注册"));
+    }
+
+    @Test
+    void login_Success() {
+        LoginReq req = new LoginReq();
+        req.setAccount("2023110421");
+        req.setPassword("password123");
+
+        when(userMapper.selectOne(any())).thenReturn(testUser);
+        when(jwtUtils.generateAccessToken(any(), any())).thenReturn("access-token");
+        when(jwtUtils.generateRefreshToken(any())).thenReturn("refresh-token");
+
+        LoginResp resp = authService.login(req);
+
+        assertNotNull(resp);
+        assertEquals("access-token", resp.getAccessToken());
+        assertEquals("refresh-token", resp.getRefreshToken());
+        assertEquals(1L, resp.getUserId());
+        assertEquals("测试用户", resp.getName());
+    }
+
+    @Test
+    void login_UserNotFound_ThrowsException() {
+        LoginReq req = new LoginReq();
+        req.setAccount("nonexistent");
+        req.setPassword("password123");
+
+        when(userMapper.selectOne(any())).thenReturn(null);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+            () -> authService.login(req));
+
+        assertEquals(ResultCode.BAD_REQUEST, exception.getResultCode());
+        assertTrue(exception.getMessage().contains("账号不存在"));
+    }
+
+    @Test
+    void login_WrongPassword_ThrowsException() {
+        LoginReq req = new LoginReq();
+        req.setAccount("2023110421");
+        req.setPassword("wrongpassword");
+
+        when(userMapper.selectOne(any())).thenReturn(testUser);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+            () -> authService.login(req));
+
+        assertEquals(ResultCode.BAD_REQUEST, exception.getResultCode());
+        assertTrue(exception.getMessage().contains("密码错误"));
+    }
+
+    @Test
+    void login_UserDisabled_ThrowsException() {
+        testUser.setStatus("DISABLED");
+
+        LoginReq req = new LoginReq();
+        req.setAccount("2023110421");
+        req.setPassword("password123");
+
+        when(userMapper.selectOne(any())).thenReturn(testUser);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+            () -> authService.login(req));
+
+        assertEquals(ResultCode.FORBIDDEN, exception.getResultCode());
+        assertTrue(exception.getMessage().contains("账号已被禁用"));
+    }
+
+    @Test
+    void forgotPassword_UserExists_SendsVerifyCode() {
+        ForgotPasswordReq req = new ForgotPasswordReq();
+        req.setAccount("test@example.com");
+
+        when(userMapper.exists(any())).thenReturn(true);
+        doNothing().when(emailUtils).sendVerifyCode(any(), any());
+
+        assertDoesNotThrow(() -> authService.forgotPassword(req));
+
+        verify(emailUtils).sendVerifyCode(eq("test@example.com"), any());
+    }
+
+    @Test
+    void forgotPassword_UserNotExists_ThrowsException() {
+        ForgotPasswordReq req = new ForgotPasswordReq();
+        req.setAccount("nonexistent@example.com");
+
+        when(userMapper.exists(any())).thenReturn(false);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+            () -> authService.forgotPassword(req));
+
+        assertEquals(ResultCode.BAD_REQUEST, exception.getResultCode());
+        assertTrue(exception.getMessage().contains("该账号不存在"));
+    }
+
+    @Test
+    void resetPassword_Success() {
+        ResetPasswordReq req = new ResetPasswordReq();
+        req.setAccount("2023110421");
+        req.setVerifyCode("123456");
+        req.setNewPassword("newpassword123");
+
+        when(userMapper.selectOne(any())).thenReturn(testUser);
+        when(userMapper.updateById(testUser)).thenReturn(1);
+
+        assertDoesNotThrow(() -> authService.resetPassword(req));
+
+        verify(userMapper).updateById(testUser);
+    }
+
+    @Test
+    void resetPassword_UserNotFound_ThrowsException() {
+        ResetPasswordReq req = new ResetPasswordReq();
+        req.setAccount("nonexistent");
+        req.setVerifyCode("123456");
+        req.setNewPassword("newpassword123");
+
+        when(userMapper.selectOne(any())).thenReturn(null);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+            () -> authService.resetPassword(req));
+
+        assertEquals(ResultCode.BAD_REQUEST, exception.getResultCode());
+        assertTrue(exception.getMessage().contains("用户不存在"));
+    }
+
+    @Test
+    void refreshToken_Success() {
+        String refreshToken = "valid-refresh-token";
+
+        when(jwtUtils.getUserIdFromToken(refreshToken)).thenReturn(1L);
+        when(userMapper.selectById(1L)).thenReturn(testUser);
+        when(jwtUtils.generateAccessToken(any(), any())).thenReturn("new-access-token");
+        when(jwtUtils.generateRefreshToken(any())).thenReturn("new-refresh-token");
+
+        LoginResp resp = authService.refreshToken(refreshToken);
+
+        assertNotNull(resp);
+        assertEquals("new-access-token", resp.getAccessToken());
+        assertEquals("new-refresh-token", resp.getRefreshToken());
+    }
+
+    @Test
+    void refreshToken_InvalidToken_ThrowsException() {
+        String invalidToken = "invalid-token";
+
+        when(jwtUtils.getUserIdFromToken(invalidToken))
+            .thenThrow(new BusinessException(ResultCode.UNAUTHORIZED, "令牌无效"));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+            () -> authService.refreshToken(invalidToken));
+
+        assertEquals(ResultCode.UNAUTHORIZED, exception.getResultCode());
+    }
+
+    @Test
+    void logout_Success() {
+        String token = "some-token";
+
+        assertDoesNotThrow(() -> authService.logout(token));
     }
 }

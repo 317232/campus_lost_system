@@ -1,8 +1,12 @@
 package com.campus.lostfound.claim;
 
-import com.campus.lostfound.common.ApiResponse;
-import com.campus.lostfound.demo.DemoDataService;
-import java.util.Map;
+import com.campus.lostfound.claim.dto.ClaimDTO;
+import com.campus.lostfound.claim.service.ClaimService;
+import com.campus.lostfound.common.api.ApiResponse;
+import com.campus.lostfound.common.api.ResultCode;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,21 +14,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api")
 public class ClaimController {
 
-    private final DemoDataService demoDataService;
+    private final ClaimService claimService;
 
-    public ClaimController(DemoDataService demoDataService) {
-        this.demoDataService = demoDataService;
+    public ClaimController(ClaimService claimService) {
+        this.claimService = claimService;
     }
 
-    @PostMapping("/api/claims")
-    public ApiResponse<?> create(@RequestBody Map<String, Object> payload) {
-        return ApiResponse.success("claim-created", payload);
+    @PostMapping("/claims")
+    public ResponseEntity<ApiResponse<Void>> create(@Valid @RequestBody ClaimDTO.CreateClaimReq request) {
+        try {
+            claimService.createClaim(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(null));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
+        }
     }
 
-    @GetMapping("/api/users/me/claims")
-    public ApiResponse<?> myClaims() {
-        return ApiResponse.success(demoDataService.claims());
+    @GetMapping("/users/me/claims")
+    public ResponseEntity<ApiResponse<Void>> myClaims() {
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

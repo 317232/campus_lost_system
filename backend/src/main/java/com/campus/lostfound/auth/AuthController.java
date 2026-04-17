@@ -1,12 +1,14 @@
 package com.campus.lostfound.auth;
 
-import com.campus.lostfound.auth.AuthRequests.ForgotPasswordRequest;
-import com.campus.lostfound.auth.AuthRequests.LoginRequest;
-import com.campus.lostfound.auth.AuthRequests.RegisterRequest;
-import com.campus.lostfound.auth.AuthRequests.ResetPasswordRequest;
-import com.campus.lostfound.common.ApiResponse;
+import com.campus.lostfound.auth.dto.AuthDTO.ForgotPasswordReq;
+import com.campus.lostfound.auth.dto.AuthDTO.LoginReq;
+import com.campus.lostfound.auth.dto.AuthDTO.LoginResp;
+import com.campus.lostfound.auth.dto.AuthDTO.RegisterReq;
+import com.campus.lostfound.auth.dto.AuthDTO.ResetPasswordReq;
+import com.campus.lostfound.common.api.ApiResponse;
+import com.campus.lostfound.common.api.ResultCode;
+import com.campus.lostfound.auth.service.AuthService;
 import jakarta.validation.Valid;
-import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,48 +20,50 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthDemoService authDemoService;
+    private final AuthService authService;
 
-    public AuthController(AuthDemoService authDemoService) {
-        this.authDemoService = authDemoService;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
-    
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterReq request) {
         try {
+            authService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("registered", authDemoService.register(request)));
+                .body(ApiResponse.success(null));
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(ApiResponse.failure(400, exception.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
         }
-        
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<?>> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<LoginResp>> login(@Valid @RequestBody LoginReq request) {
         try {
-            return ResponseEntity.ok(ApiResponse.success(authDemoService.login(request)));
+            LoginResp loginResp = authService.login(request);
+            return ResponseEntity.ok(ApiResponse.success(loginResp));
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(ApiResponse.failure(400, exception.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
         }
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordReq request) {
         try {
-            return ResponseEntity.ok(ApiResponse.success("verification-passed", authDemoService.forgotPassword(request)));
+            authService.forgotPassword(request);
+            return ResponseEntity.ok(ApiResponse.success(null));
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(ApiResponse.failure(400, exception.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
         }
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordReq request) {
         try {
-            return ResponseEntity.ok(ApiResponse.success("password-reset", authDemoService.resetPassword(request)));
+            authService.resetPassword(request);
+            return ResponseEntity.ok(ApiResponse.success(null));
         } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(ApiResponse.failure(400, exception.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
         }
     }
 }
