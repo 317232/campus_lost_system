@@ -5,6 +5,7 @@ import com.campus.lostfound.claim.service.ClaimService;
 import com.campus.lostfound.common.api.ApiResponse;
 import com.campus.lostfound.common.api.ResultCode;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +37,12 @@ public class ClaimController {
     }
 
     @GetMapping("/users/me/claims")
-    public ResponseEntity<ApiResponse<Void>> myClaims() {
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<List<ClaimDTO.ClaimResp>>> myClaims() {
+        try {
+            return ResponseEntity.ok(ApiResponse.success(claimService.getMyClaims()));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
+        }
     }
 }
