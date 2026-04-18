@@ -9,11 +9,13 @@ import com.campus.lostfound.domain.entity.Claim;
 import com.campus.lostfound.domain.entity.Item;
 import com.campus.lostfound.domain.entity.Notice;
 import com.campus.lostfound.domain.entity.Report;
+import com.campus.lostfound.domain.entity.User;
 import com.campus.lostfound.mapper.CategoryMapper;
 import com.campus.lostfound.mapper.ClaimMapper;
 import com.campus.lostfound.mapper.ItemMapper;
 import com.campus.lostfound.mapper.NoticeMapper;
 import com.campus.lostfound.mapper.ReportMapper;
+import com.campus.lostfound.mapper.UserMapper;
 import com.campus.lostfound.security.SecurityUserUtils;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +34,7 @@ public class AdminServiceImpl implements AdminService {
     private final NoticeMapper noticeMapper;
     private final CategoryMapper categoryMapper;
     private final ReportMapper reportMapper;
+    private final UserMapper userMapper;
     private final SecurityUserUtils securityUserUtils;
 
     public AdminServiceImpl(ItemMapper itemMapper,
@@ -39,13 +42,23 @@ public class AdminServiceImpl implements AdminService {
                             NoticeMapper noticeMapper,
                             CategoryMapper categoryMapper,
                             ReportMapper reportMapper,
+                            UserMapper userMapper,
                             SecurityUserUtils securityUserUtils) {
         this.itemMapper = itemMapper;
         this.claimMapper = claimMapper;
         this.noticeMapper = noticeMapper;
         this.categoryMapper = categoryMapper;
         this.reportMapper = reportMapper;
+        this.userMapper = userMapper;
         this.securityUserUtils = securityUserUtils;
+    }
+
+    @Override
+    public List<Map<String, Object>> listPendingItems() {
+        return itemMapper.selectMaps(new QueryWrapper<Item>()
+            .select("id", "biz_id", "scene", "item_name", "location", "audit_status", "status", "created_at")
+            .eq("audit_status", "PENDING")
+            .orderByDesc("id"));
     }
 
     @Override
@@ -92,6 +105,28 @@ public class AdminServiceImpl implements AdminService {
                     .set("status", "CLAIMED")
                     .set("stage", "closed"));
             }
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> listUsers() {
+        return userMapper.selectMaps(new QueryWrapper<User>()
+            .select("id", "student_no", "name", "phone", "email", "status", "created_at")
+            .orderByDesc("id"));
+    }
+
+    @Override
+    public void updateUserStatus(Long userId, String status) {
+        if (!"ACTIVE".equalsIgnoreCase(status) && !"INACTIVE".equalsIgnoreCase(status)) {
+            throw new IllegalArgumentException("状态仅支持 ACTIVE 或 INACTIVE");
+        }
+
+        int affected = userMapper.update(null, new UpdateWrapper<User>()
+            .eq("id", userId)
+            .set("status", status.toUpperCase(Locale.ROOT)));
+
+        if (affected <= 0) {
+            throw new IllegalArgumentException("用户不存在");
         }
     }
 
@@ -201,6 +236,11 @@ public class AdminServiceImpl implements AdminService {
             updateWrapper.set("handled_by", handlerId);
         }
         return reportMapper.update(null, updateWrapper) > 0;
+    }
+
+    @Override
+    public List<Map<String, Object>> listOperationLogs() {
+        return List.of();
     }
 
     private String normalizeAuditStatus(String input) {

@@ -5,6 +5,7 @@ import com.campus.lostfound.admin.service.AdminService;
 import com.campus.lostfound.common.api.ApiResponse;
 import com.campus.lostfound.common.api.ResultCode;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -27,7 +29,14 @@ public class AdminController {
         this.adminService = adminService;
     }
 
-    /** 物品信息审核 */
+    /** 信息审核-获取待审核列表 */
+    @GetMapping("/items/pending")
+    public ApiResponse<List<Map<String, Object>>> pendingItems() {
+        return ApiResponse.success(adminService.listPendingItems());
+    }
+
+    /** 信息审核-提交审核（兼容 PUT/POST） */
+    @PutMapping("/items/audit")
     @PostMapping("/items/audit")
     public ResponseEntity<ApiResponse<Void>> auditItem(@Valid @RequestBody AdminDTO.AuditItemReq request) {
         try {
@@ -38,11 +47,33 @@ public class AdminController {
         }
     }
 
-    /** 认领申请审核 */
+    /** 认领审核（兼容 PUT/POST） */
+    @PutMapping("/claims/audit")
     @PostMapping("/claims/audit")
     public ResponseEntity<ApiResponse<Void>> auditClaim(@Valid @RequestBody AdminDTO.AuditClaimReq request) {
         try {
             adminService.auditClaim(request);
+            return ResponseEntity.ok(ApiResponse.success(null));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
+        }
+    }
+
+    /** 用户管理 */
+    @GetMapping("/users")
+    public ApiResponse<List<Map<String, Object>>> users() {
+        return ApiResponse.success(adminService.listUsers());
+    }
+
+    @PutMapping("/users/status")
+    public ResponseEntity<ApiResponse<Void>> updateUserStatus(@RequestBody Map<String, Object> payload) {
+        try {
+            Long userId = payload.get("userId") == null ? null : Long.parseLong(payload.get("userId").toString());
+            String status = payload.get("status") == null ? null : payload.get("status").toString();
+            if (userId == null || status == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, "userId/status 不能为空"));
+            }
+            adminService.updateUserStatus(userId, status);
             return ResponseEntity.ok(ApiResponse.success(null));
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
@@ -106,14 +137,14 @@ public class AdminController {
         }
     }
 
-    /** 数据统计大盘 */
-    @GetMapping("/stats/dashboard")
+    /** 数据统计 */
+    @RequestMapping(value = {"/statistics", "/stats/dashboard"}, method = RequestMethod.GET)
     public ApiResponse<AdminDTO.DashboardResp> dashboard() {
         return ApiResponse.success(adminService.dashboard());
     }
 
     /** 反馈处理 */
-    @PutMapping("/reports")
+    @RequestMapping(value = {"/reports/handle", "/reports"}, method = RequestMethod.PUT)
     public ResponseEntity<ApiResponse<Void>> handleReport(@Valid @RequestBody AdminDTO.HandleReportReq request) {
         boolean handled = adminService.handleReport(request);
         if (handled) {
@@ -121,5 +152,11 @@ public class AdminController {
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(ApiResponse.failure(ResultCode.NOT_FOUND, "举报记录不存在"));
+    }
+
+    /** 操作日志 */
+    @GetMapping("/logs")
+    public ApiResponse<List<Map<String, Object>>> logs() {
+        return ApiResponse.success(adminService.listOperationLogs());
     }
 }
