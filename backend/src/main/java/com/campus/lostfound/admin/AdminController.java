@@ -1,7 +1,8 @@
 package com.campus.lostfound.admin;
 
-import com.campus.lostfound.common.ApiResponse;
-import com.campus.lostfound.demo.DemoDataService;
+import com.campus.lostfound.auth.AuthController;
+import com.campus.lostfound.common.api.ApiResponse;
+
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,20 +11,31 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.campus.lostfound.user.service.ProfileService;
+import com.campus.lostfound.claim.service.ClaimService;
 
+
+/**
+ * 管理员控制器
+ * 提供管理员操作的接口
+ * 包括用户管理、物品审核、招领物品审核、物品管理、举报审核、公告管理
+ */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
 
-    private final DemoDataService demoDataService;
+    private final AuthController authController;
+    
+    private final ProfileService profileService;
 
-    public AdminController(DemoDataService demoDataService) {
-        this.demoDataService = demoDataService;
+    public AdminController(ProfileService profileService, AuthController authController) {
+        this.profileService = profileService;
+        this.authController = authController;
     }
 
     @GetMapping("/users")
     public ApiResponse<?> users() {
-        return ApiResponse.success(demoDataService.adminUsers());
+        return ApiResponse.success(profileService.adminUsers());
     }
 
     @PutMapping("/users/{id}/status")
@@ -33,7 +45,8 @@ public class AdminController {
 
     @GetMapping("/lost-items/review")
     public ApiResponse<?> lostReviewList() {
-        return ApiResponse.success(demoDataService.reviewTasks());
+        // 获取待审核的物品列表
+        return ApiResponse.success(profileService.reviewTasks());
     }
 
     @PostMapping("/lost-items/{id}/approve")
@@ -48,7 +61,8 @@ public class AdminController {
 
     @GetMapping("/found-items/review")
     public ApiResponse<?> foundReviewList() {
-        return ApiResponse.success(demoDataService.reviewTasks());
+        // 获取招领物品的待审核的物品列表
+        return ApiResponse.success(profileService.reviewTasks());
     }
 
     @PostMapping("/found-items/{id}/approve")
@@ -63,15 +77,15 @@ public class AdminController {
 
     @GetMapping("/claims")
     public ApiResponse<?> claims() {
-        return ApiResponse.success(demoDataService.claims());
+        return ApiResponse.success(profileService.claims());
     }
 
     @GetMapping("/claims/{id}")
     public ApiResponse<?> claimDetail(@PathVariable Long id) {
-        return ApiResponse.success(demoDataService.claims().stream()
+        return ApiResponse.success(profileService.claims().stream()
             .filter(item -> item.id().equals(id))
             .findFirst()
-            .orElse(demoDataService.claims().get(0)));
+            .orElse(profileService.claims().get(0)));
     }
 
     @PostMapping("/claims/{id}/approve")
