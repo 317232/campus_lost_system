@@ -60,12 +60,15 @@ public class FoundItemController  {
      */
     @PostMapping
     public ApiResponse<?> create(@RequestBody FoundItem foundItem) {
-        // TODO: 这里可以从上下文中获取当前登录用户的 ID，并赋值给 foundItem.setUserId()
-        boolean saved = foundItemService.createFoundItem(foundItem);
-        if (saved) {
-            return ApiResponse.success("发布成功", foundItem);
+        try {
+            boolean saved = foundItemService.createFoundItem(foundItem);
+            if (saved) {
+                return ApiResponse.success("发布成功", foundItem);
+            }
+            return ApiResponse.failure(ResultCode.INTERNAL_ERROR, "发布失败，请稍后重试");
+        } catch (IllegalArgumentException exception) {
+            return ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage());
         }
-        return ApiResponse.failure(ResultCode.INTERNAL_ERROR, "发布失败，请稍后重试");
     }
     /**
      * 更新拾物信息
