@@ -1,6 +1,7 @@
 package com.campus.lostfound.user;
 
 import com.campus.lostfound.common.api.ApiResponse;
+<<<<<<< HEAD
 import com.campus.lostfound.common.api.ResultCode;
 import com.campus.lostfound.user.dto.UpdateProfileRequest;
 import com.campus.lostfound.user.dto.UserDTO;
@@ -8,6 +9,12 @@ import com.campus.lostfound.user.dto.UserProfileResponse;
 import com.campus.lostfound.user.service.ProfileService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+=======
+import com.campus.lostfound.user.dto.UpdateProfileRequest;
+import com.campus.lostfound.user.dto.UserProfileResponse;
+import com.campus.lostfound.user.service.ProfileService;
+import jakarta.validation.Valid;
+>>>>>>> e6018af274081aaf01236708b32c16c95d1c734a
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -27,6 +34,7 @@ public class ProfileController {
         this.profileService = profileService;
     }
 
+<<<<<<< HEAD
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserDTO.UserResp>> me() {
         UserDTO.UserResp profile = profileService.getCurrentUserProfile();
@@ -57,6 +65,16 @@ public class ProfileController {
     public ResponseEntity<ApiResponse<List<UserDTO.UserItemResp>>> myFoundItems() {
         List<UserDTO.UserItemResp> items = profileService.getUserFoundItems(getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.success(items));
+=======
+    @GetMapping
+    public ApiResponse<UserProfileResponse> me() {
+        return ApiResponse.success(profileService.getCurrentProfile());
+    }
+
+    @PutMapping
+    public ApiResponse<UserProfileResponse> update(@Valid @RequestBody UpdateProfileRequest request) {
+        return ApiResponse.success("profile-updated", profileService.updateCurrentProfile(request));
+>>>>>>> e6018af274081aaf01236708b32c16c95d1c734a
     }
 
     @GetMapping("/statistics")
