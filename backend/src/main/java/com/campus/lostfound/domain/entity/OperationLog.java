@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("operation_log")
+@TableName("operation_logs")
 public class OperationLog extends BaseEntity {
   @TableId(type = IdType.AUTO)
     private Long id;

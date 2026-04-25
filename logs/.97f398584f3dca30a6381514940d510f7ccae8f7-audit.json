@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/m9570/Desktop/vibecoding/compus_lost_system/demo2/git_workspace/logs/.97f398584f3dca30a6381514940d510f7ccae8f7-audit.json",
+    "files": [
+        {
+            "date": 1776666079290,
+            "name": "/Users/m9570/Desktop/vibecoding/compus_lost_system/demo2/git_workspace/logs/mcp-puppeteer-2026-04-20.log",
+            "hash": "8f9e5e281ef4d7b3d6f011e8a85769a2a331d80c72c56583188ab44a11d1bbbf"
+        },
+        {
+            "date": 1776781781449,
+            "name": "/Users/m9570/Desktop/vibecoding/compus_lost_system/demo2/git_workspace/logs/mcp-puppeteer-2026-04-21.log",
+            "hash": "7c171087fb214697500ef3592908f6511cb96a1fb7ae6a01bff63cc46f04c2fb"
+        }
+    ],
+    "hashType": "sha256"
+}

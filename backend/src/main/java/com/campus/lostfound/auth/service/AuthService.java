@@ -13,6 +13,13 @@ public interface AuthService {
     void register(AuthDTO.RegisterReq req);
 
     /**
+     * 发送邮箱验证码
+     *
+     * @param req 发送验证码请求
+     */
+    void sendEmailCode(AuthDTO.SendEmailCodeReq req);
+
+    /**
      * 处理用户登录逻辑
      * 需校验账号密码，成功后生成并返回 JWT (Access Token & Refresh Token)
      *

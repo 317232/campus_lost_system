@@ -2,12 +2,12 @@ package com.campus.lostfound.common.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -18,7 +18,8 @@ public class JwtUtils {
     private String secret;
 
     private SecretKey getSecretKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        // secret 在 application.yml 中是 base64 编码，需先解码
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
     // Access Token 过期时间：2小时
@@ -30,13 +31,14 @@ public class JwtUtils {
     /**
      * 生成 Access Token
      */
-    public String generateAccessToken(Long userId, String studentNo) {
+    public String generateAccessToken(Long userId, String studentNo, String role) {
         return Jwts.builder()
-                .subject(String.valueOf(userId))    // 0.12.x: setSubject -> subject
+                .subject(String.valueOf(userId))
                 .claim("studentNo", studentNo)
-                .issuedAt(new Date())               // 0.12.x: setIssuedAt -> issuedAt
-                .expiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION)) // setExpiration -> expiration
-                .signWith(getSecretKey())               // 传入 SecretKey
+                .claim("role", role)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION))
+                .signWith(getSecretKey())
                 .compact();
     }
 

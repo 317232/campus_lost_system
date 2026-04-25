@@ -3,9 +3,8 @@ import { computed } from 'vue'
 import { itemApi } from '@/api/modules'
 import ItemCard from '@/components/business/ItemCard.vue'
 import { useRemoteCollection } from '@/composables/useRemoteCollection'
-import { foundItems } from '../../data/catalog'
 
-const foundState = useRemoteCollection(() => itemApi.getFoundItems(), foundItems, {
+const foundState = useRemoteCollection(() => itemApi.getItems('found'), foundItems, {
   select: (response) => response?.records || [],
 })
 
@@ -13,7 +12,7 @@ const displayItems = computed(() =>
   foundState.items.map((item) => ({
     ...item,
     type: 'found',
-    status: item.stage?.toLowerCase?.() === 'claimed' ? 'claimed' : item.status || 'pending',
+    status: item.status === 'PUBLISHED' ? 'published' : item.status?.toLowerCase?.() || 'pending',
   })),
 )
 </script>

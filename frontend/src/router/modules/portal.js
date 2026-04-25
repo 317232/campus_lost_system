@@ -8,6 +8,7 @@ import LostListView from '@/views/user/LostListView.vue'
 import NoticeListView from '@/views/user/NoticeListView.vue'
 import ProfileView from '@/views/user/ProfileView.vue'
 import PublishView from '@/views/user/PublishView.vue'
+import ReportView from '@/views/user/ReportView.vue'
 
 export const portalRoutes = [
   {
@@ -22,6 +23,7 @@ export const portalRoutes = [
       { path: 'publish/:mode', name: 'publish', component: PublishView },
       { path: 'claims', name: 'claims', component: ClaimsView, meta: { requiresAuth: true } },
       { path: 'profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
+      { path: 'report', name: 'report', component: ReportView, meta: { requiresAuth: true } },
       { path: 'notices', name: 'notices', component: NoticeListView },
     ],
   },

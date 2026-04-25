@@ -74,7 +74,7 @@ public class CategoryServiceImpl implements CategoryService {
         dto.setName(category.getName());
         dto.setSortOrder(category.getSortOrder());
         dto.setStatus(category.getStatus());
-        dto.setCreateTime(category.getCreateTime());
+        dto.setCreateTime(category.getCreatedAt());
         return dto;
     }
 }

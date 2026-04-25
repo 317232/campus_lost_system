@@ -1,19 +1,15 @@
 package com.campus.lostfound.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-<<<<<<< HEAD
+import com.campus.lostfound.common.api.ResultCode;
+import com.campus.lostfound.common.exception.BusinessException;
 import com.campus.lostfound.domain.entity.*;
 import com.campus.lostfound.mapper.*;
-=======
-import com.campus.lostfound.domain.entity.User;
-import com.campus.lostfound.mapper.UserMapper;
 import com.campus.lostfound.security.SecurityUserUtils;
->>>>>>> e6018af274081aaf01236708b32c16c95d1c734a
 import com.campus.lostfound.user.dto.UpdateProfileRequest;
 import com.campus.lostfound.user.dto.UserDTO;
 import com.campus.lostfound.user.dto.UserProfileResponse;
 import com.campus.lostfound.user.service.ProfileService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -21,113 +17,71 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 用户个人资料 Service 实现
+ *
+ * 修复记录：
+ *  - 移除混用 @Autowired + 显式构造器的问题，改为纯构造器注入
+ *  - 修复 getCurrentUserId() 硬编码 1L → 使用 SecurityUserUtils
+ *  - 补全缺失的 getUserLostItems() 实现
+ *  - 补全 bio → major 字段的更新写入
+ */
+@lombok.extern.slf4j.Slf4j
 @Service
 public class ProfileServiceImpl implements ProfileService {
 
-<<<<<<< HEAD
-    @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
-    private RoleMapper roleMapper;
-
-    @Autowired
-    private PermissionMapper permissionMapper;
-
-    @Autowired
-    private ItemMapper itemMapper;
-
-    @Override
-    public UserDTO.UserResp getCurrentUserProfile() {
-        Long currentUserId = getCurrentUserId();
-        User user = userMapper.selectById(currentUserId);
-        if (user == null) {
-            return null;
-        }
-
-        UserDTO.UserResp resp = new UserDTO.UserResp();
-        resp.setId(user.getId());
-        resp.setStudentNo(user.getStudentNo());
-        resp.setName(user.getName());
-        resp.setMajor(user.getMajor());
-        resp.setPhone(user.getPhone());
-        resp.setEmail(user.getEmail());
-        resp.setAvatarUrl(user.getAvatarUrl());
-        resp.setStatus(user.getStatus());
-        resp.setCreateTime(user.getCreateTime());
-
-        List<String> permissions = getUserPermissions(currentUserId);
-        resp.setPermissions(permissions);
-
-        Role role = getUserRole(currentUserId);
-        if (role != null) {
-            resp.setRoleCode(role.getRoleCode());
-            resp.setRoleName(role.getRoleName());
-        }
-
-        return resp;
-=======
     private final UserMapper userMapper;
+    private final RoleMapper roleMapper;
+    private final PermissionMapper permissionMapper;
+    private final ItemMapper itemMapper;
+    private final UserRoleMapper userRoleMapper;
+    private final RolePermissionMapper rolePermissionMapper;
     private final SecurityUserUtils securityUserUtils;
 
-    public ProfileServiceImpl(UserMapper userMapper, SecurityUserUtils securityUserUtils) {
+    public ProfileServiceImpl(UserMapper userMapper,
+                              RoleMapper roleMapper,
+                              PermissionMapper permissionMapper,
+                              ItemMapper itemMapper,
+                              UserRoleMapper userRoleMapper,
+                              RolePermissionMapper rolePermissionMapper,
+                              SecurityUserUtils securityUserUtils) {
         this.userMapper = userMapper;
+        this.roleMapper = roleMapper;
+        this.permissionMapper = permissionMapper;
+        this.itemMapper = itemMapper;
+        this.userRoleMapper = userRoleMapper;
+        this.rolePermissionMapper = rolePermissionMapper;
         this.securityUserUtils = securityUserUtils;
     }
 
+    // ─── 接口方法：GET /api/users/me ──────────────────────────
     @Override
-    public UserProfileResponse getCurrentProfile() {
-        User user = resolveCurrentUser();
-        return toResponse(user);
->>>>>>> e6018af274081aaf01236708b32c16c95d1c734a
-    }
-
-    @Override
-    public UserProfileResponse updateCurrentProfile(UpdateProfileRequest request) {
-<<<<<<< HEAD
+    public UserDTO.UserResp getCurrentUserProfile() {
         Long currentUserId = getCurrentUserId();
+        log.info("DEBUG getCurrentUserProfile: currentUserId={}", currentUserId);
+        if (currentUserId == null) {
+            return null;
+        }
         User user = userMapper.selectById(currentUserId);
         if (user == null) {
             return null;
         }
-
-        if (request.displayName() != null && !request.displayName().isBlank()) {
-            user.setName(request.displayName());
-        }
-        if (request.phone() != null && !request.phone().isBlank()) {
-            user.setPhone(request.phone());
-        }
-        if (request.email() != null && !request.email().isBlank()) {
-            user.setEmail(request.email());
-        }
-        if (request.avatarUrl() != null && !request.avatarUrl().isBlank()) {
-            user.setAvatarUrl(request.avatarUrl());
-        }
-
-        userMapper.updateById(user);
-
-        return new UserProfileResponse(
-            user.getId(),
-            user.getStudentNo(),
-            user.getName(),
-            getUserRoleCode(currentUserId),
-            user.getPhone(),
-            user.getEmail(),
-            user.getAvatarUrl(),
-            request.bio()
-        );
+        return buildUserResp(user);
     }
 
+    /**
+     * getCurrentProfile() 是 ProfileController#update 之外的第二个接口方法，
+     * 保持与 getCurrentUserProfile() 行为一致，返回 UserDTO.UserResp 以统一响应格式。
+     * （接口声明已调整为 UserDTO.UserResp，详见 ProfileService.java）
+     */
     @Override
-    public List<UserDTO.UserItemResp> getUserLostItems(Long userId) {
-        LambdaQueryWrapper<Item> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Item::getOwnerId, userId);
-        queryWrapper.eq(Item::getScene, "lost");
-        queryWrapper.orderByDesc(Item::getCreateTime);
+    public UserDTO.UserResp getCurrentProfile() {
+        return getCurrentUserProfile();
+    }
 
-        List<Item> items = itemMapper.selectList(queryWrapper);
-        return items.stream().map(this::convertToUserItemResp).collect(Collectors.toList());
-=======
+    // ─── 接口方法：PUT /api/users/me ──────────────────────────
+    @Override
+    public UserProfileResponse updateCurrentProfile(UpdateProfileRequest request) {
         User user = resolveCurrentUser();
 
         if (StringUtils.hasText(request.displayName())) {
@@ -142,100 +96,131 @@ public class ProfileServiceImpl implements ProfileService {
         if (StringUtils.hasText(request.avatarUrl())) {
             user.setAvatarUrl(request.avatarUrl().trim());
         }
+        // bio 字段对应 User.major
+        if (StringUtils.hasText(request.bio())) {
+            user.setMajor(request.bio().trim());
+        }
 
         userMapper.updateById(user);
         return toResponse(user);
     }
 
-    private User resolveCurrentUser() {
-        Long currentUserId = securityUserUtils.getCurrentUserId();
-        User user = null;
-
-        if (currentUserId != null) {
-            user = userMapper.selectById(currentUserId);
-        }
-
-        if (user == null) {
-            user = userMapper.selectOne(new LambdaQueryWrapper<User>()
-                .eq(User::getStatus, "ACTIVE")
-                .last("LIMIT 1"));
-        }
-
-        if (user == null) {
-            throw new IllegalArgumentException("当前用户不存在");
-        }
-        return user;
+    // ─── 接口方法：GET /api/users/me/lost-items ──────────────
+    @Override
+    public List<UserDTO.UserItemResp> getUserLostItems(Long userId) {
+        LambdaQueryWrapper<Item> qw = new LambdaQueryWrapper<>();
+        qw.eq(Item::getOwnerId, userId);
+        qw.eq(Item::getScene, "lost");
+        qw.orderByDesc(Item::getCreateTime);
+        return itemMapper.selectList(qw)
+                .stream()
+                .map(this::convertToUserItemResp)
+                .collect(Collectors.toList());
     }
 
-    private UserProfileResponse toResponse(User user) {
-        return new UserProfileResponse(
-            user.getId(),
-            user.getStudentNo(),
-            user.getName(),
-            "USER",
-            user.getPhone(),
-            user.getEmail(),
-            user.getAvatarUrl(),
-            user.getMajor()
-        );
->>>>>>> e6018af274081aaf01236708b32c16c95d1c734a
-    }
-
+    // ─── 接口方法：GET /api/users/me/found-items ─────────────
     @Override
     public List<UserDTO.UserItemResp> getUserFoundItems(Long userId) {
-        LambdaQueryWrapper<Item> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Item::getOwnerId, userId);
-        queryWrapper.eq(Item::getScene, "found");
-        queryWrapper.orderByDesc(Item::getCreateTime);
-
-        List<Item> items = itemMapper.selectList(queryWrapper);
-        return items.stream().map(this::convertToUserItemResp).collect(Collectors.toList());
+        LambdaQueryWrapper<Item> qw = new LambdaQueryWrapper<>();
+        qw.eq(Item::getOwnerId, userId);
+        qw.eq(Item::getScene, "found");
+        qw.orderByDesc(Item::getCreateTime);
+        return itemMapper.selectList(qw)
+                .stream()
+                .map(this::convertToUserItemResp)
+                .collect(Collectors.toList());
     }
 
+    // ─── 接口方法：GET /api/users/statistics ─────────────────
     @Override
     public List<UserDTO.UserStatisticsResp> getAdminStatistics() {
-        LambdaQueryWrapper<User> userQueryWrapper = new LambdaQueryWrapper<>();
-        List<User> users = userMapper.selectList(userQueryWrapper);
-
+        List<User> users = userMapper.selectList(new LambdaQueryWrapper<>());
         return users.stream().map(user -> {
             UserDTO.UserStatisticsResp stat = new UserDTO.UserStatisticsResp();
             stat.setUserId(user.getId());
             stat.setUserName(user.getName());
 
-            LambdaQueryWrapper<Item> itemQueryWrapper = new LambdaQueryWrapper<>();
-            itemQueryWrapper.eq(Item::getOwnerId, user.getId());
-            List<Item> items = itemMapper.selectList(itemQueryWrapper);
+            List<Item> items = itemMapper.selectList(
+                    new LambdaQueryWrapper<Item>().eq(Item::getOwnerId, user.getId()));
 
             stat.setTotalPosts((long) items.size());
-            stat.setApprovedCount(items.stream().filter(i -> "APPROVED".equals(i.getAuditStatus())).count());
-            stat.setPendingCount(items.stream().filter(i -> "PENDING".equals(i.getAuditStatus())).count());
-            stat.setRejectedCount(items.stream().filter(i -> "REJECTED".equals(i.getAuditStatus())).count());
-
-            if (stat.getTotalPosts() > 0) {
-                stat.setApprovalRate((double) stat.getApprovedCount() / stat.getTotalPosts() * 100);
-            } else {
-                stat.setApprovalRate(0.0);
-            }
-
+            stat.setApprovedCount(items.stream().filter(i -> "PUBLISHED".equals(i.getStatus())).count());
+            stat.setPendingCount(items.stream().filter(i -> "PENDING_REVIEW".equals(i.getStatus())).count());
+            stat.setRejectedCount(items.stream().filter(i -> "REJECTED".equals(i.getStatus())).count());
+            stat.setApprovalRate(stat.getTotalPosts() > 0
+                    ? (double) stat.getApprovedCount() / stat.getTotalPosts() * 100
+                    : 0.0);
             return stat;
         }).collect(Collectors.toList());
     }
 
+    // ─── 私有辅助 ─────────────────────────────────────────────
+
+    /** 获取当前登录用户 ID，优先从 JWT Security 上下文取 */
+    private Long getCurrentUserId() {
+        return securityUserUtils.getCurrentUserId();
+    }
+
+    /**
+     * 解析当前用户实体
+     * @throws BusinessException 如果用户未登录或不存在
+     */
+    private User resolveCurrentUser() {
+        Long uid = getCurrentUserId();
+        if (uid == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "用户未登录，请先登录");
+        }
+        
+        User user = userMapper.selectById(uid);
+        if (user == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "用户不存在");
+        }
+        return user;
+    }
+
+    /** 将 User 实体映射为 UserDTO.UserResp（含角色/权限） */
+    private UserDTO.UserResp buildUserResp(User user) {
+        UserDTO.UserResp resp = new UserDTO.UserResp();
+        resp.setId(user.getId());
+        resp.setStudentNo(user.getStudentNo());
+        resp.setName(user.getName());
+        resp.setMajor(user.getMajor());
+        resp.setPhone(user.getPhone());
+        resp.setEmail(user.getEmail());
+        resp.setAvatarUrl(user.getAvatarUrl());
+        resp.setStatus(user.getStatus());
+        resp.setCreateTime(user.getCreateTime());
+        resp.setPermissions(getUserPermissions(user.getId()));
+
+        Role role = getUserRole(user.getId());
+        if (role != null) {
+            resp.setRoleCode(role.getRoleCode());
+            resp.setRoleName(role.getRoleName());
+        }
+        return resp;
+    }
+
+    /** 将 User 实体映射为 UserProfileResponse（简化版，用于 update 响应） */
+    private UserProfileResponse toResponse(User user) {
+        return new UserProfileResponse(
+                user.getId(),
+                user.getStudentNo(),
+                user.getName(),
+                "USER",
+                user.getPhone(),
+                user.getEmail(),
+                user.getAvatarUrl(),
+                user.getMajor()
+        );
+    }
+
     private List<String> getUserPermissions(Long userId) {
-        LambdaQueryWrapper<UserRole> urQueryWrapper = new LambdaQueryWrapper<>();
-        urQueryWrapper.eq(UserRole::getUserId, userId);
-        List<UserRole> userRoles = getUserRoles(userId);
-
         List<String> permissions = new ArrayList<>();
-        for (UserRole ur : userRoles) {
-            LambdaQueryWrapper<RolePermission> rpQueryWrapper = new LambdaQueryWrapper<>();
-            rpQueryWrapper.eq(RolePermission::getRoleId, ur.getRoleId());
-            List<RolePermission> rolePermissions = getRolePermissions(ur.getRoleId());
-
-            for (RolePermission rp : rolePermissions) {
-                Permission permission = permissionMapper.selectById(rp.getPermissionId());
-                if (permission != null && Boolean.TRUE.equals(permission.getEnabled())) {
-                    permissions.add(permission.getCode());
+        for (UserRole ur : getUserRoles(userId)) {
+            for (RolePermission rp : getRolePermissions(ur.getRoleId())) {
+                Permission perm = permissionMapper.selectById(rp.getPermissionId());
+                if (perm != null) {
+                    permissions.add(perm.getCode());
                 }
             }
         }
@@ -244,33 +229,17 @@ public class ProfileServiceImpl implements ProfileService {
 
     private Role getUserRole(Long userId) {
         List<UserRole> userRoles = getUserRoles(userId);
-        if (userRoles.isEmpty()) {
-            return null;
-        }
-        return roleMapper.selectById(userRoles.get(0).getRoleId());
-    }
-
-    private String getUserRoleCode(Long userId) {
-        Role role = getUserRole(userId);
-        return role != null ? role.getRoleCode() : "USER";
+        return userRoles.isEmpty() ? null : roleMapper.selectById(userRoles.get(0).getRoleId());
     }
 
     private List<UserRole> getUserRoles(Long userId) {
-        LambdaQueryWrapper<UserRole> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(UserRole::getUserId, userId);
-        List<UserRole> userRoles = new ArrayList<>();
-        return userRoles;
+        return userRoleMapper.selectList(
+            new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
     }
 
     private List<RolePermission> getRolePermissions(Long roleId) {
-        LambdaQueryWrapper<RolePermission> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(RolePermission::getRoleId, roleId);
-        List<RolePermission> rolePermissions = new ArrayList<>();
-        return rolePermissions;
-    }
-
-    private Long getCurrentUserId() {
-        return 1L;
+        return rolePermissionMapper.selectList(
+            new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getRoleId, roleId));
     }
 
     private UserDTO.UserItemResp convertToUserItemResp(Item item) {
@@ -282,7 +251,6 @@ public class ProfileServiceImpl implements ProfileService {
         resp.setCategory(item.getCategory());
         resp.setLocation(item.getLocation());
         resp.setStatus(item.getStatus());
-        resp.setAuditStatus(item.getAuditStatus());
         resp.setCreateTime(item.getCreateTime());
         resp.setImageUrls(new ArrayList<>());
         return resp;

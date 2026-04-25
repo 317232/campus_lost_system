@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 @Data
-@TableName("item_contact")
+@TableName("item_contacts")
 @EqualsAndHashCode(callSuper = true)
 public class ItemContact extends BaseEntity {
   @TableId(type = IdType.AUTO)

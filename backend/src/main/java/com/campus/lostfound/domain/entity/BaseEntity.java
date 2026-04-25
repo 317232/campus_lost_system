@@ -21,6 +21,9 @@ public class BaseEntity implements Serializable {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
+    @TableField("created_at")
     private LocalDateTime createTime;
+
+    @TableField("updated_at")
     private LocalDateTime updateTime;
 }

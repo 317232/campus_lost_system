@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("report")
+@TableName("reports")
 public class Report extends BaseEntity {
 @TableId(type = IdType.AUTO)
     private Long id;

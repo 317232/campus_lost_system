@@ -7,10 +7,14 @@ const props = defineProps({
 })
 
 const labelMap = {
-  urgent: '高优先',
-  pending: '待处理',
-  claimed: '已认领',
-  value: '关键件',
+  urgent:         '高优先',
+  pending:         '待处理',
+  claimed:         '已认领',
+  value:          '关键件',
+  PENDING_REVIEW: '审核中',
+  PUBLISHED:      '已发布',
+  REJECTED:       '已驳回',
+  CLAIMED:        '已认领',
 }
 </script>
 

@@ -1,22 +1,38 @@
-import { api } from '../index'
+import { api } from "../index";
 
 function unwrap(response) {
-  return response?.data?.data ?? response?.data ?? response
+  return response?.data?.data ?? response?.data ?? response;
 }
 
 const authApi = {
   login(payload) {
-    return api.post('/auth/login', payload, { skipAuth: true }).then(unwrap)
+    return api
+      .post("/auth/login", payload, { skipAuth: true })
+      .then(unwrap);
   },
   register(payload) {
-    return api.post('/auth/register', payload, { skipAuth: true }).then(unwrap)
+    return api
+      .post("/auth/register", payload, { skipAuth: true })
+      .then(unwrap);
+  },
+  sendEmailCode(payload) {
+    return api
+      .post("/auth/send-email-code", payload, { skipAuth: true })
+      .then(unwrap);
   },
   forgotPassword(payload) {
-    return api.post('/auth/forgot-password', payload, { skipAuth: true }).then(unwrap)
+    return api
+      .post("/auth/forgot-password", payload, { skipAuth: true })
+      .then(unwrap);
   },
   resetPassword(payload) {
-    return api.post('/auth/reset-password', payload, { skipAuth: true }).then(unwrap)
+    return api
+      .post("/auth/reset-password", payload, { skipAuth: true })
+      .then(unwrap);
   },
-}
+  logout() {
+    return api.post("/auth/logout").then(unwrap);
+  },
+};
 
-export { authApi }
+export { authApi };

@@ -100,7 +100,6 @@ const featuredFound = computed(() =>
   <section class="market-section">
     <div class="market-section-title">
       <h3>招领信息</h3>
-      <span>近期审核通过、可发起认领的物品</span>
       <RouterLink to="/found">查看全部</RouterLink>
     </div>
     <div class="market-card-grid">
@@ -111,11 +110,11 @@ const featuredFound = computed(() =>
   <section class="market-section market-notice-section">
     <div class="market-section-title">
       <h3>平台公告</h3>
-      <span>值班、证件优先、认领说明都在这里</span>
       <RouterLink to="/notices">查看全部</RouterLink>
     </div>
-    <p v-if="noticeState.error" class="feedback feedback-error">公告接口不可用，已回退到演示数据。</p>
-    <div class="market-notice-grid">
+    <div v-if="noticeState.loading" class="feedback feedback-loading">加载中...</div>
+    <p v-else-if="noticeState.error" class="feedback feedback-error">公告加载失败：{{ noticeState.error }}，已回退到演示数据。</p>
+    <div v-else class="market-notice-grid">
       <article v-for="notice in displayNotices" :key="notice.id" class="notice-card">
         <strong>{{ notice.title }}</strong>
         <p>{{ notice.summary || notice.content }}</p>

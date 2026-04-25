@@ -24,6 +24,18 @@ public class ClaimController {
         this.claimService = claimService;
     }
 
+    @PostMapping("/claims/draft")
+    public ResponseEntity<ApiResponse<ClaimDTO.DraftResp>> createDraft(
+            @Valid @RequestBody ClaimDTO.CreateDraftReq request) {
+        try {
+            ClaimDTO.DraftResp draft = claimService.createDraft(request);
+            return ResponseEntity.ok(ApiResponse.success(draft));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
+        }
+    }
+
     @PostMapping("/claims")
     public ResponseEntity<ApiResponse<Void>> create(@Valid @RequestBody ClaimDTO.CreateClaimReq request) {
         try {

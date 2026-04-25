@@ -32,9 +32,10 @@ public class UserDTO {
         private String category;
         private String location;
         private String status;
-        private String auditStatus;
         private List<String> imageUrls;
         private LocalDateTime createTime;
+        private String description;
+        private String contact;
     }
 
     @Data

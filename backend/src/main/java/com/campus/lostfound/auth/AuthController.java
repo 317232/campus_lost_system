@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.campus.lostfound.auth.dto.AuthDTO;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -47,6 +48,16 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/send-email-code")
+    public ResponseEntity<ApiResponse<Void>> sendEmailCode(@Valid @RequestBody AuthDTO.SendEmailCodeReq request) {
+        try {
+            authService.sendEmailCode(request);
+            return ResponseEntity.ok(ApiResponse.success(null));
+        } catch (IllegalArgumentException | com.campus.lostfound.common.exception.BusinessException exception) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
+        }
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordReq request) {
         try {
@@ -65,5 +76,14 @@ public class AuthController {
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(jakarta.servlet.http.HttpServletRequest request) {
+        String authorization = request.getHeader(org.springframework.http.HttpHeaders.AUTHORIZATION);
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            authService.logout(authorization);
+        }
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

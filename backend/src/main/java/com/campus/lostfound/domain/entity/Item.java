@@ -24,10 +24,7 @@ public class Item extends BaseEntity {
 
     private String stage; // 阶段：draft/active/closed
 
-    private String status; // 状态：PENDING_REVIEW/PUBLISHED/CLAIMED/FOUND_BACK/REJECTED/OFFLINE
-
-    @TableField("audit_status")
-    private String auditStatus; // 审核状态：PENDING/APPROVED/REJECTED
+    private String status; // 状态：DRAFT/PENDING_REVIEW/PUBLISHED/REJECTED/CLAIMED/FOUND_BACK/OFFLINE
 
     @TableField("owner_id")
     private Long ownerId; // 发布人ID
@@ -57,8 +54,8 @@ public class Item extends BaseEntity {
     @TableField("contact_visibility")
     private String contactVisibility; // 联系方式可见性：MASKED/UNMASKED
 
-    @TableLogic // MyBatis-Plus 逻辑删除注解
-    @TableField("deleted_at")
-    private LocalDateTime deletedAt; // 删除时间
+    @TableLogic // MyBatis-Plus 逻辑删除注解：0=未删除，1=已删除
+    @TableField("deleted")
+    private Integer deleted;
 
 }

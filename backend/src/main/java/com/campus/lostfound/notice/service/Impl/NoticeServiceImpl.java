@@ -35,7 +35,7 @@ public class NoticeServiceImpl implements NoticeService {
                     .like(Notice::getContent, keyword));
         }
 
-        queryWrapper.orderByDesc(Notice::getCreateTime);
+        queryWrapper.orderByDesc(Notice::getCreatedAt);
 
         Page<Notice> noticePage = noticeMapper.selectPage(page, queryWrapper);
         Page<NoticeDTO.NoticeResp> dtoPage = new Page<>(
@@ -116,7 +116,7 @@ public class NoticeServiceImpl implements NoticeService {
         dto.setContent(notice.getContent());
         dto.setPublished(notice.getPublished());
         dto.setPublishedAt(notice.getPublishedAt());
-        dto.setCreateTime(notice.getCreateTime());
+        dto.setCreateTime(notice.getCreatedAt());
         return dto;
     }
 }
