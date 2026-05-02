@@ -8,6 +8,14 @@ GitHub: https://github.com/317232/campus_lost_system.git
 
 ---
 
+## 当前版本
+
+**v1.4** — 迭代1-4全部完成，核心功能测试通过
+
+详细规划见 `docx/迭代规划-20260425.md`
+
+---
+
 ## 技术栈
 
 ### 后端
@@ -62,6 +70,10 @@ campus_lost_system/
 │       ├── utils/            # 工具函数
 │       └── views/            # 页面视图
 ├── docx/                      # 需求文档
+│   ├── 迭代规划-20260425.md              # 当前主规划 (v1.4)
+│   ├── 迭代规划-20260425-30分钟执行计划.md # 30分钟执行详细计划
+│   ├── 迭代规划-20260424.md              # 历史版本
+│   └── ... (其他文档)
 └── sql/                       # 数据库脚本（init.sql）
 ```
 
@@ -78,6 +90,7 @@ campus_lost_system/
 | 联系方式 | 脱敏展示 + 查看日志记录 |
 | 举报 | 用户举报反馈（物品/认领/公告/用户） |
 | 操作日志 | 管理员关键操作自动记录 |
+| WebSocket | 实时通知推送 |
 
 ---
 
@@ -185,6 +198,9 @@ campus_lost_system/
 ### 后端
 
 ```bash
+# 杀死存在的进程
+lsof -i :8080 | grep -v grep | xargs kill -9
+# 启动后端
 cd backend
 # 配置 application.yml 中的数据库连接
 mvn spring-boot:run
@@ -193,7 +209,28 @@ mvn spring-boot:run
 ### 前端
 
 ```bash
+lsof -i :5173 | grep -v grep | xargs kill -9
+# 启动前端
 cd frontend
 npm install
 npm run dev
 ```
+
+---
+
+## 数据库连接
+
+```
+Host: localhost
+Port: 3306
+Database: campus_lost_found
+Username: root
+Password: 12345678
+```
+
+## 测试账号
+
+| 角色 | 账号 | 密码 | 说明 |
+|------|------|------|------|
+| 普通用户 | 2021001 | 123456 | 正式环境测试账号 |
+| 管理员 | 2024001 | 123456 | 管理员后台访问 |

@@ -21,36 +21,33 @@ const visualMap = {
 }
 
 const visualBadge = computed(() => visualMap[props.item.category] || '寻')
+
+const hasImage = computed(() => props.item.image && props.item.image.trim() !== '')
 </script>
 
 <template>
   <article class="item-card market-item-card">
-    <div class="market-item-media">
-      <span>{{ visualBadge }}</span>
+    <div class="market-item-media" :data-category="props.item.category">
+      <img v-if="hasImage" :src="props.item.image" :alt="props.item.title" class="item-img" />
+      <div v-else class="item-icon-badge">{{ visualBadge }}</div>
     </div>
 
-    <div class="card-topline">
-      <StatusBadge :status="props.item.status" />
-      <span class="item-category">{{ props.item.category }}</span>
+    <div class="card-body">
+      <div class="card-topline">
+        <StatusBadge :status="props.item.status" />
+        <span class="item-category">{{ props.item.category }}</span>
+      </div>
+      <div class="card-content">
+        <h3>{{ props.item.title }}</h3>
+        <p class="item-desc">{{ props.item.description }}</p>
+        <dl class="item-info">
+          <div><dt>地点:</dt><dd>{{ props.item.location }}</dd></div>
+          <div><dt>时间:</dt><dd>{{ props.item.time }}</dd></div>
+          <div><dt>联系人:</dt><dd>{{ props.item.contact }}</dd></div>
+        </dl>
+      </div>
     </div>
-    <div class="card-content">
-      <h3>{{ props.item.title }}</h3>
-      <p class="item-desc">{{ props.item.description }}</p>
-    </div>
-    <dl>
-      <div class="item-info">
-        <dt>地点:</dt>
-        <dd>{{ props.item.location }}</dd>
-      </div>
-      <div class="item-info">
-        <dt>时间:</dt>
-        <dd>{{ props.item.time }}</dd>
-      </div>
-      <div class="item-info">
-        <dt>联系人:</dt>
-        <dd>{{ props.item.contact }}</dd>
-      </div>
-    </dl>
+
     <div class="market-item-footer">
       <div class="market-item-meta">
         <strong>{{ props.item.itemName || props.item.title }}</strong>

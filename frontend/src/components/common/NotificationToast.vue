@@ -1,4 +1,5 @@
 <template>
+  <!-- 通知弹窗 -->
   <div v-if="show" class="notification-toast" :class="`notification-${type}`" role="alert" aria-live="polite">
     {{ message }}
   </div>

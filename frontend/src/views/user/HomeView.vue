@@ -60,32 +60,17 @@ const featuredFound = computed(() =>
   </section>
 
   <section class="market-metrics">
-    <div class="market-section-title">
+    <!-- <div class="market-section-title">
       <div class="section-heading">
         <h3>平台速览</h3>
-        <span>展示平台运行状态</span>
       </div>
-    </div>
+    </div> -->
     <div class="stats-grid">
-      <article v-for="stat in dashboardStats" :key="stat.label" class="stat-card">
+      <article v-for="stat in dashboardStats" :key="stat.label" class="stat-card" :data-label="stat.label">
         <p>{{ stat.label }}</p>
         <strong>{{ stat.value }}</strong>
         <span>{{ stat.hint }}</span>
       </article>
-    </div>
-  </section>
-
-  <section class="market-section">
-    <div class="market-section-title">
-      <div class="section-heading">
-        <h3>失物推荐</h3>
-        <span>展示近期失物与重要紧急物品</span>
-
-      </div>
-      <RouterLink to="/lost">查看全部</RouterLink>
-    </div>
-    <div class="market-card-grid">
-      <ItemCard v-for="item in featuredLost" :key="item.id" :item="item" />
     </div>
   </section>
 
@@ -95,6 +80,16 @@ const featuredFound = computed(() =>
       <span>工作日 9:00 - 17:30 可携带有效证明前往值班室认领</span>
     </div>
     <RouterLink to="/notices">查看公告</RouterLink>
+  </section>
+
+  <section class="market-section">
+    <div class="market-section-title">
+      <h3>近期失物</h3>
+      <RouterLink to="/lost">查看全部</RouterLink>
+    </div>
+    <div class="market-card-grid">
+      <ItemCard v-for="item in featuredLost" :key="item.id" :item="item" />
+    </div>
   </section>
 
   <section class="market-section">

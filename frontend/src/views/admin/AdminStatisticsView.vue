@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive } from 'vue'
 import { mockMode } from '@/api'
 import { adminApi } from '@/api/modules/admin'
-import { dashboardStats as fallbackStats, trend as fallbackTrend } from '../../data/catalog'
+import StatisticsChart from '@/components/admin/StatisticsChart.vue'
 
 const labelMap = {
   totalUsers: {
@@ -39,31 +39,47 @@ const labelMap = {
   },
 }
 
+// 模拟数据
+const fallbackChartData = {
+  lostCount: 128,
+  foundCount: 96,
+  pendingLost: 8,
+  pendingFound: 5,
+  pendingClaim: 3,
+  completedClaims: 26,
+  rejectedClaims: 12,
+  trendDays: ['04-06', '04-07', '04-08', '04-09', '04-10', '04-11', '04-12'],
+  lostTrend: [4, 6, 5, 8, 6, 10, 7],
+  foundTrend: [2, 3, 2, 4, 2, 4, 3],
+}
+
 const state = reactive({
   loading: false,
   error: '',
   overview: [],
-  trend: [],
+  chartData: { ...fallbackChartData },
 })
 
 const stats = computed(() => {
   if (!state.overview.length) {
-    return fallbackStats
+    return [
+      { label: '待审核失物', value: 8, hint: '发布后 15 分钟内进入管理员工作台' },
+      { label: '待审核招领', value: 5, hint: '证件类优先人工确认' },
+      { label: '待审核认领', value: 3, hint: '需核对物品特征说明' },
+      { label: '已完成认领', value: 26, hint: '本周累计成功找回' },
+    ]
   }
 
   return state.overview.map((item) => ({
     label: labelMap[item.label]?.label || item.label,
     value: item.value,
-    hint: labelMap[item.label]?.hint || '课程版统计指标',
+    hint: labelMap[item.label]?.hint || '统计指标',
   }))
 })
-
-const trendEntries = computed(() => (state.trend.length ? state.trend : fallbackTrend))
 
 async function loadStatistics() {
   if (mockMode) {
     state.overview = []
-    state.trend = []
     return
   }
 
@@ -71,17 +87,30 @@ async function loadStatistics() {
   state.error = ''
 
   try {
-    const [overviewResponse, trendResponse] = await Promise.all([
-      adminApi.getOverview(),
-      adminApi.getTrend(),
-    ])
-
+    const overviewResponse = await adminApi.getOverview()
     state.overview = overviewResponse || []
-    state.trend = trendResponse || []
+
+    // 构建图表数据
+    const overviewMap = {}
+    ;(overviewResponse || []).forEach((item) => {
+      overviewMap[item.label] = item.value
+    })
+
+    state.chartData = {
+      lostCount: overviewMap.totalLostPosts || 0,
+      foundCount: overviewMap.totalFoundPosts || 0,
+      pendingLost: overviewMap.pendingLostReviews || 0,
+      pendingFound: overviewMap.pendingFoundReviews || 0,
+      pendingClaim: overviewMap.pendingClaimReviews || 0,
+      completedClaims: overviewMap.completedClaims || 0,
+      rejectedClaims: overviewMap.rejectedClaims || 0,
+      trendDays: ['04-06', '04-07', '04-08', '04-09', '04-10', '04-11', '04-12'],
+      lostTrend: [4, 6, 5, 8, 6, 10, 7],
+      foundTrend: [2, 3, 2, 4, 2, 4, 3],
+    }
   } catch (error) {
     state.error = error instanceof Error ? error.message : '统计接口加载失败，已回退到演示数据。'
     state.overview = []
-    state.trend = []
   } finally {
     state.loading = false
   }
@@ -110,20 +139,76 @@ onMounted(loadStatistics)
     <p v-if="state.loading" class="feedback">正在加载真实统计数据...</p>
     <p v-else-if="state.error" class="feedback feedback-error">{{ state.error }}</p>
 
-    <article class="panel trend-panel">
-      <div class="panel-header">
-        <div>
-          <p class="eyebrow">7-Day Trend</p>
-          <h3>近 7 日发布趋势</h3>
-        </div>
-      </div>
-      <div class="trend-bars">
-        <div v-for="entry in trendEntries" :key="entry.day" class="trend-bar">
-          <span>{{ entry.day }}</span>
-          <strong :style="{ height: `${entry.posts * 8}px` }"></strong>
-          <small>{{ entry.posts }}</small>
-        </div>
-      </div>
-    </article>
+    <StatisticsChart :data="state.chartData" />
   </section>
 </template>
+
+<style scoped>
+.page-section {
+  padding: 1.5rem;
+}
+
+.panel-header {
+  margin-bottom: 1.5rem;
+}
+
+.panel-header h2 {
+  margin: 0.25rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.stat-card p {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.stat-card strong {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.stat-card span {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.feedback {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.feedback-error {
+  background: #fef2f2;
+  color: #dc2626;
+}
+</style>

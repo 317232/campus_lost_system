@@ -11,8 +11,7 @@
 INSERT INTO roles (role_code, role_name, description, is_system)
 VALUES
     ('ADMIN', '系统管理员', '系统超级管理员，拥有所有权限', TRUE),
-    ('USER', '普通用户', '普通用户，拥有基础业务权限', TRUE),
-    ('AUDITOR', '审核员', '内容审核专员，负责审核物品与认领申请', TRUE)
+    ('USER', '普通用户', '普通用户，拥有基础业务权限', TRUE)
 ON DUPLICATE KEY UPDATE
     role_name = VALUES(role_name),
     description = VALUES(description),
@@ -73,31 +72,16 @@ WHERE r.role_code = 'USER'
       WHERE rp.role_id = r.id AND rp.permission_id = p.id
   );
 
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r
-JOIN permissions p ON p.perm_code IN (
-    'item:view', 'audit:item', 'audit:claim', 'audit:list',
-    'user:view', 'category:view', 'report:view', 'announcement:view'
-)
-WHERE r.role_code = 'AUDITOR'
-  AND NOT EXISTS (
-      SELECT 1 FROM role_permissions rp
-      WHERE rp.role_id = r.id AND rp.permission_id = p.id
-  );
-
 -- =========================
 -- 测试账号
 -- 密码：
 -- admin001 / admin123
--- auditor001 / 123456
 -- 其他测试用户 / 123456
 -- =========================
 
 INSERT INTO users (student_no, name, password_hash, phone, email, major, avatar_url, status)
 VALUES
     ('admin001', '系统管理员', '$2b$12$pPGkOVIfimBkZ9TTZCJubOMDkWn7RlAS2PwEPd2CYPsDFd0ZXa2z6', '18800009999', 'admin@example.com', '系统管理', NULL, 'NORMAL'),
-    ('auditor001', '审核员小周', '$2b$12$oLr70F6ItCsvFo3FRckUoOx1T1N2wW5SnnVwm6bxtE7Vj/k0/pMs2', '18800001001', 'auditor@example.com', '审核中心', NULL, 'NORMAL'),
     ('2023110421', '林知夏', '$2b$12$oLr70F6ItCsvFo3FRckUoOx1T1N2wW5SnnVwm6bxtE7Vj/k0/pMs2', '18800001111', 'lin@example.com', '软件工程', NULL, 'NORMAL'),
     ('2023110999', '周叙白', '$2b$12$oLr70F6ItCsvFo3FRckUoOx1T1N2wW5SnnVwm6bxtE7Vj/k0/pMs2', '18800002222', 'zhou@example.com', '网络工程', NULL, 'NORMAL'),
     ('2023110666', '王同学', '$2b$12$oLr70F6ItCsvFo3FRckUoOx1T1N2wW5SnnVwm6bxtE7Vj/k0/pMs2', '18800003333', 'wang@example.com', '人工智能', NULL, 'NORMAL'),
@@ -121,16 +105,6 @@ SELECT u.id, r.id
 FROM users u
 JOIN roles r ON r.role_code = 'ADMIN'
 WHERE u.student_no = 'admin001'
-  AND NOT EXISTS (
-      SELECT 1 FROM user_roles ur
-      WHERE ur.user_id = u.id AND ur.role_id = r.id
-  );
-
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id
-FROM users u
-JOIN roles r ON r.role_code = 'AUDITOR'
-WHERE u.student_no = 'auditor001'
   AND NOT EXISTS (
       SELECT 1 FROM user_roles ur
       WHERE ur.user_id = u.id AND ur.role_id = r.id

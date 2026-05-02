@@ -1,4 +1,5 @@
 <template>
+  <!-- 通知 -->
   <div class="notification-wrapper">
     <NotificationBell />
   </div>

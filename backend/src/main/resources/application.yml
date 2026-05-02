@@ -2,7 +2,7 @@ spring:
   application:
     name: lostfound-backend
   datasource:
-    url: jdbc:mysql://localhost:3306/lostfound?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/campus_lost_found?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: 12345678
     driver-class-name: com.mysql.cj.jdbc.Driver

@@ -30,7 +30,7 @@ const displayItems = computed(() =>
         <select><option>按时间排序</option></select>
       </div>
     </div>
-    <p v-if="lostState.error" class="feedback feedback-error">失物接口不可用，当前显示演示数据。</p>
+    <p v-if="lostState.error" class="feedback feedback-error">当前网络不可用，请刷新后重试。</p>
 
     <div class="card-grid">
       <ItemCard v-for="item in displayItems" :key="item.id" :item="item" />

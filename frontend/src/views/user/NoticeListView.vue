@@ -14,7 +14,7 @@ const noticeState = useRemoteCollection(() => noticeApi.list(), notices)
         <h2>平台公告</h2>
       </div>
     </div>
-    <p v-if="noticeState.error" class="feedback feedback-error">公告接口不可用，已回退到演示数据。</p>
+    <p v-if="noticeState.error" class="feedback feedback-error">当前网络不可用，请刷新后重试。</p>
     <div class="panel-list">
       <article v-for="notice in noticeState.items" :key="notice.id" class="notice-card">
         <strong>{{ notice.title }}</strong>

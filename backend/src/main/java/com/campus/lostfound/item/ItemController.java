@@ -4,6 +4,7 @@ import com.campus.lostfound.common.api.ApiResponse;
 import com.campus.lostfound.common.api.PageResponse;
 import com.campus.lostfound.common.api.ResultCode;
 import com.campus.lostfound.common.service.ContactService;
+import com.campus.lostfound.item.dto.MatchResp;
 import com.campus.lostfound.security.SecurityUserUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -88,6 +89,14 @@ public class ItemController {
             @RequestParam(required = false) String scene) {
         PageResponse<ItemResp> result = itemService.getMyItems(page, pageSize, scene);
         return ApiResponse.success(result);
+    }
+
+    @GetMapping("/{id}/matches")
+    public ApiResponse<MatchResp> getMatches(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "3") Integer limit) {
+        MatchResp matches = itemService.getMatches(id, limit);
+        return ApiResponse.success(matches);
     }
 
     @GetMapping("/{id}/contact")

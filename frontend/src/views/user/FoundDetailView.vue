@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { itemApi } from '@/api/modules'
 import { useRoute, useRouter } from 'vue-router'
 import StatusBadge from '@/components/common/StatusBadge.vue'
+import MatchRecommendations from '@/components/business/MatchRecommendations.vue'
 import { useRemoteCollection } from '@/composables/useRemoteCollection'
 import { foundItems } from '../../data/catalog'
 
@@ -79,6 +80,9 @@ function goReport() {
       <button type="button" class="secondary" @click="goReport">举报信息</button>
     </div>
   </section>
+  
+  <!-- 智能匹配推荐 -->
+  <MatchRecommendations v-if="item.id" :itemId="item.id" scene="found" />
 </template>
 
 <style scoped>

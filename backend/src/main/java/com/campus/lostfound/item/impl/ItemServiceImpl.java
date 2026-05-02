@@ -8,6 +8,8 @@ import com.campus.lostfound.domain.entity.ItemAudit;
 import com.campus.lostfound.domain.entity.User;
 import com.campus.lostfound.item.ItemController.*;
 import com.campus.lostfound.item.ItemService;
+import com.campus.lostfound.item.dto.MatchItem;
+import com.campus.lostfound.item.dto.MatchResp;
 import com.campus.lostfound.mapper.ItemAuditMapper;
 import com.campus.lostfound.mapper.ItemMapper;
 import com.campus.lostfound.mapper.UserMapper;
@@ -198,6 +200,102 @@ public class ItemServiceImpl implements ItemService {
                 .collect(Collectors.toList());
 
         return new PageResponse<>(dtoList, itemPage.getTotal(), page, pageSize);
+    }
+
+    @Override
+    public MatchResp getMatches(Long itemId, Integer limit) {
+        Item sourceItem = itemMapper.selectById(itemId);
+        if (sourceItem == null) {
+            return new MatchResp("", new ArrayList<>());
+        }
+
+        // 确定相反的场景
+        String targetScene = "lost".equals(sourceItem.getScene()) ? "found" : "lost";
+
+        // 查询候选物品：相反场景 + 同分类 + 已发布状态
+        LambdaQueryWrapper<Item> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Item::getScene, targetScene)
+               .eq(Item::getStatus, "PUBLISHED")
+               // 排除自己
+               .ne(Item::getId, itemId);
+
+        // 如果有分类，优先匹配同分类
+        if (StringUtils.hasText(sourceItem.getCategory())) {
+            wrapper.and(w -> w.eq(Item::getCategory, sourceItem.getCategory())
+                    .or()
+                    .like(Item::getItemName, sourceItem.getItemName()));
+        }
+
+        List<Item> candidates = itemMapper.selectList(wrapper);
+
+        // 计算匹配分并排序
+        List<MatchItem> matches = candidates.stream()
+                .map(c -> {
+                    int score = calculateMatchScore(sourceItem, c);
+                    return buildMatchItem(c, score);
+                })
+                .sorted((a, b) -> b.getMatchScore().compareTo(a.getMatchScore()))
+                .limit(limit)
+                .collect(Collectors.toList());
+
+        MatchResp resp = new MatchResp();
+        resp.setScene(targetScene);
+        resp.setItems(matches);
+        return resp;
+    }
+
+    /**
+     * 计算匹配分
+     * - 分类相同 +30
+     * - 地点相同 +25
+     * - 名称包含 +25
+     * - 时间7天内 +20
+     */
+    private int calculateMatchScore(Item source, Item target) {
+        int score = 0;
+
+        // 分类相同
+        if (StringUtils.hasText(source.getCategory()) && 
+            source.getCategory().equals(target.getCategory())) {
+            score += 30;
+        }
+
+        // 地点相同
+        if (StringUtils.hasText(source.getZone()) && 
+            source.getZone().equals(target.getZone())) {
+            score += 25;
+        }
+
+        // 名称包含/相似
+        if (StringUtils.hasText(source.getItemName()) && 
+            StringUtils.hasText(target.getItemName())) {
+            String srcName = source.getItemName().toLowerCase();
+            String tgtName = target.getItemName().toLowerCase();
+            if (tgtName.contains(srcName) || srcName.contains(tgtName) ||
+                srcName.equals(tgtName)) {
+                score += 25;
+            }
+        }
+
+        // TODO: 时间相近计算
+
+        return score;
+    }
+
+    private MatchItem buildMatchItem(Item item, int score) {
+        MatchItem matchItem = new MatchItem();
+        matchItem.setId(item.getId());
+        matchItem.setBizId(item.getBizId());
+        matchItem.setTitle(item.getTitle());
+        matchItem.setItemName(item.getItemName());
+        matchItem.setCategory(item.getCategory());
+        matchItem.setZone(item.getZone());
+        matchItem.setLocation(item.getLocation());
+        matchItem.setTimeLabel(item.getTimeLabel());
+        matchItem.setMatchScore(score);
+        // 缩略图暂时设为空，前端可使用附件
+        matchItem.setThumbnail(null);
+        return matchItem;
     }
 
     private ItemResp convertToResp(Item item) {

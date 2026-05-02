@@ -13,6 +13,31 @@ const isMobileMenuOpen = ref(false)
 const { userStore, isAuthenticated, logout } = useAuth()
 const categoriesState = useRemoteCollection(() => categoriesApi.list(), categories)
 
+// 子页面（详情页/表单页）需要显示顶部导航栏
+const subPageNames = ['lost-detail', 'found-detail', 'publish', 'report', 'claims', 'profile']
+const showSubNav = computed(() => subPageNames.includes(route.name))
+
+// 上一页标题
+const backPageName = computed(() => {
+  const nameMap = {
+    'lost-detail': '失物详情',
+    'found-detail': '招领详情',
+    'publish': '发布信息',
+    'report': '举报',
+    'claims': '认领进度',
+    'profile': '个人中心',
+  }
+  return nameMap[route.name] || '返回'
+})
+
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/')
+  }
+}
+
 const links = [
   { label: '首页', to: '/' },
   { label: '失物大厅', to: '/lost' },
@@ -37,6 +62,16 @@ const handleSearch = () => {
 
 <template>
   <div class="portal-shell">
+    <!-- 子页面顶部导航栏 -->
+    <div v-if="showSubNav" class="sub-page-nav">
+      <button class="back-btn" @click="goBack">
+        <span class="back-arrow">‹</span>
+        <span>{{ backPageName }}</span>
+      </button>
+      <span class="sub-page-title">{{ backPageName }}</span>
+      <div class="sub-page-spacer"></div>
+    </div>
+
     <!-- 头部区域 -->
     <header class="portal-header">
       <!-- 顶部欢迎栏 -->
@@ -477,6 +512,59 @@ const handleSearch = () => {
   margin: 0;
   font-size: 0.85rem;
   color: #999;
+}
+
+/* 子页面顶部导航栏 */
+.sub-page-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: #1e2535;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: rgba(30, 37, 53, 0.06);
+  color: #c85f34;
+}
+
+.back-arrow {
+  font-size: 1.4rem;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.sub-page-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e2535;
+  flex: 1;
+  text-align: center;
+  padding-right: 4rem;
+}
+
+.sub-page-spacer {
+  width: 60px;
 }
 
 /* 响应式 */

@@ -12,6 +12,7 @@ const claimState = useRemoteCollection(() => claimApi.listMine(), claims)
       <div>
         <p class="eyebrow">Claim Tracking</p>
         <h2>认领进度</h2>
+        
       </div>
     </div>
     <p v-if="claimState.error" class="feedback feedback-error">认领接口不可用，已回退到演示数据。</p>

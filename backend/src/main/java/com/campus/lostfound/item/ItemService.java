@@ -1,6 +1,7 @@
 package com.campus.lostfound.item;
 
 import com.campus.lostfound.common.api.PageResponse;
+import com.campus.lostfound.item.dto.MatchResp;
 
 public interface ItemService {
 
@@ -15,4 +16,6 @@ public interface ItemService {
     boolean deleteItem(Long id);
 
     PageResponse<ItemController.ItemResp> getMyItems(Integer page, Integer pageSize, String scene);
+
+    MatchResp getMatches(Long itemId, Integer limit);
 }

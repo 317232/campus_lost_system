@@ -32,7 +32,7 @@ const reportApi = {
    * @param {number} id - 举报ID
    */
   getReportDetail(id) {
-    return api.get(`/api/reports/${id}`).then(unwrap);
+    return api.get(`/reports/${id}`).then(unwrap);
   },
 };
 

@@ -24,7 +24,7 @@ const itemApi = {
    * @param {number} id - 物品ID
    */
   getItemDetail(id) {
-    return api.get(`/api/items/${id}`).then(unwrap);
+    return api.get(`/items/${id}`).then(unwrap);
   },
 
   /**
@@ -41,7 +41,7 @@ const itemApi = {
    * @param {object} data - 更新信息
    */
   updateItem(id, data) {
-    return api.put(`/api/items/${id}`, data).then(unwrap);
+    return api.put(`/items/${id}`, data).then(unwrap);
   },
 
   /**
@@ -49,7 +49,7 @@ const itemApi = {
    * @param {number} id - 物品ID
    */
   deleteItem(id) {
-    return api.delete(`/api/items/${id}`).then(unwrap);
+    return api.delete(`/items/${id}`).then(unwrap);
   },
 
   /**
@@ -69,7 +69,16 @@ const itemApi = {
    * @param {string} source - 来源：DETAIL_PAGE/LIST_PAGE
    */
   unlockContact(id, source = 'DETAIL_PAGE') {
-    return api.get(`/api/items/${id}/contact`, { params: { source } }).then(unwrap);
+    return api.get(`/items/${id}/contact`, { params: { source } }).then(unwrap);
+  },
+
+  /**
+   * 获取智能匹配推荐
+   * @param {number} id - 物品ID
+   * @param {number} limit - 返回数量，默认3
+   */
+  getMatches(id, limit = 3) {
+    return api.get(`/items/${id}/matches`, { params: { limit } }).then(unwrap);
   },
 
   // ========== 文件上传 ==========

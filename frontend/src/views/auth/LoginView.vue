@@ -88,9 +88,15 @@ async function handleSubmit() {
   }
 }
 
-async function handleTestLogin() {
+async function handleTestLoginAdmin() {
   form.account = '2024001'
-  form.password = 'password123'
+  form.password = '123456'
+  await handleSubmit()
+}
+
+async function handleTestLoginUser() {
+  form.account = '2021001'
+  form.password = '123456'
   await handleSubmit()
 }
 </script>
@@ -112,19 +118,15 @@ async function handleTestLogin() {
         <FormInput label="登录账号" v-model="form.account" placeholder="学号 / 手机号 / 邮箱" />
         <FormInput type="password" label="密码" v-model="form.password" placeholder="请输入密码" />
         <div class="form-item">
-          <button class="login-btn" type="button" @click="handleTestLogin">使用测试数据</button>
+          <!-- @TODO： 后续删除 -->
+          <button class="login-btn" type="button" @click="handleTestLoginAdmin">使用管理员数据</button>
+          <button class="login-btn" type="button" @click="handleTestLoginUser">使用普通数据</button>
           <button class="login-btn" type="submit" :disabled="state.loading">
             {{ state.loading ? '登录中...' : '登录并进入系统' }}
           </button>
         </div>
       </div>
     </form>
-
-    <div class="auth-actions">
-      <RouterLink to="/register">注册账号</RouterLink>
-      <RouterLink to="/forgot-password">忘记密码</RouterLink>
-      <RouterLink to="/">返回首页</RouterLink>
-    </div>
 
   </section>
 </template>
