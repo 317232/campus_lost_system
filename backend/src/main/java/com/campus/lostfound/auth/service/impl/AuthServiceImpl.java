@@ -75,7 +75,18 @@ public class AuthServiceImpl implements AuthService{
 
         userMapper.insert(user);
         verifyCodeCache.remove(req.getEmail()); // 注册成功后移除验证码
-        log.info("用户注册成功，学号: {}", req.getStudentNo());
+
+        // 4. 为新用户分配默认 USER 角色
+        Role defaultRole = roleMapper.selectOne(new LambdaQueryWrapper<Role>().eq(Role::getRoleCode, "USER"));
+        if (defaultRole != null) {
+            UserRole userRole = new UserRole();
+            userRole.setUserId(user.getId());
+            userRole.setRoleId(defaultRole.getId());
+            userRoleMapper.insert(userRole);
+            log.info("用户注册成功，学号: {}, 分配默认角色: USER", req.getStudentNo());
+        } else {
+            log.warn("用户注册成功但未找到默认 USER 角色，学号: {}", req.getStudentNo());
+        }
     }
 
     @Override
