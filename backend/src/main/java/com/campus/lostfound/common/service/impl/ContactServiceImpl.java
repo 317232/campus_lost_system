@@ -12,6 +12,7 @@ import com.campus.lostfound.security.SecurityUserUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ContactServiceImpl implements ContactService {
@@ -60,6 +61,35 @@ public class ContactServiceImpl implements ContactService {
     public List<ItemContact> getMaskedContacts(Long itemId) {
         return itemContactMapper.selectList(
             new LambdaQueryWrapper<ItemContact>().eq(ItemContact::getItemId, itemId));
+    }
+
+    @Override
+    public Map<String, String> unlockContactFull(Long itemId, Long viewerId, String source) {
+        Item item = itemMapper.selectById(itemId);
+        if (item == null) {
+            throw new IllegalArgumentException("物品不存在");
+        }
+
+        // Get contact info
+        List<ItemContact> contacts = itemContactMapper.selectList(
+            new LambdaQueryWrapper<ItemContact>().eq(ItemContact::getItemId, itemId));
+
+        if (contacts.isEmpty()) {
+            return null;
+        }
+
+        // Check if item allows contact visibility (UNMASKED)
+        // Only record unlock log for masked items (not publicly visible)
+        if (!"UNMASKED".equals(item.getContactVisibility())) {
+            recordUnlockLog(itemId, viewerId, source);
+        }
+
+        // Return the first contact's full info (real contact)
+        ItemContact primaryContact = contacts.get(0);
+        Map<String, String> result = new java.util.HashMap<>();
+        result.put("contactType", primaryContact.getContactType() != null ? primaryContact.getContactType() : "手机");
+        result.put("contactValue", primaryContact.getContactValue());
+        return result;
     }
 
     private void recordUnlockLog(Long itemId, Long viewerId, String source) {

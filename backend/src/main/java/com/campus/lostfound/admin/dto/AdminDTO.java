@@ -104,8 +104,58 @@ public class AdminDTO {
         public void setHandleRemark(String handleRemark) { this.handleRemark = handleRemark; }
     }
 
-    public record DashboardResp(long lostCount, long foundCount, long approvedClaims, long totalClaims,
-                                double claimSuccessRate) {
+    /** 数据统计大盘响应 */
+    public static class DashboardResp {
+        private long lostCount;
+        private long foundCount;
+        private long approvedClaims;
+        private long totalClaims;
+        private double claimSuccessRate;
+        // 用户发布统计
+        private long totalUsers;
+        private long activeUsers;
+        // 物品审核状态分布
+        private long pendingReviewCount;
+        private long publishedCount;
+        private long rejectedCount;
+        private long claimedCount;
+        private long offlineCount;
+
+        public DashboardResp() {}
+
+        public DashboardResp(long lostCount, long foundCount, long approvedClaims, long totalClaims,
+                            double claimSuccessRate) {
+            this.lostCount = lostCount;
+            this.foundCount = foundCount;
+            this.approvedClaims = approvedClaims;
+            this.totalClaims = totalClaims;
+            this.claimSuccessRate = claimSuccessRate;
+        }
+
+        public long getLostCount() { return lostCount; }
+        public void setLostCount(long lostCount) { this.lostCount = lostCount; }
+        public long getFoundCount() { return foundCount; }
+        public void setFoundCount(long foundCount) { this.foundCount = foundCount; }
+        public long getApprovedClaims() { return approvedClaims; }
+        public void setApprovedClaims(long approvedClaims) { this.approvedClaims = approvedClaims; }
+        public long getTotalClaims() { return totalClaims; }
+        public void setTotalClaims(long totalClaims) { this.totalClaims = totalClaims; }
+        public double getClaimSuccessRate() { return claimSuccessRate; }
+        public void setClaimSuccessRate(double claimSuccessRate) { this.claimSuccessRate = claimSuccessRate; }
+        public long getTotalUsers() { return totalUsers; }
+        public void setTotalUsers(long totalUsers) { this.totalUsers = totalUsers; }
+        public long getActiveUsers() { return activeUsers; }
+        public void setActiveUsers(long activeUsers) { this.activeUsers = activeUsers; }
+        public long getPendingReviewCount() { return pendingReviewCount; }
+        public void setPendingReviewCount(long pendingReviewCount) { this.pendingReviewCount = pendingReviewCount; }
+        public long getPublishedCount() { return publishedCount; }
+        public void setPublishedCount(long publishedCount) { this.publishedCount = publishedCount; }
+        public long getRejectedCount() { return rejectedCount; }
+        public void setRejectedCount(long rejectedCount) { this.rejectedCount = rejectedCount; }
+        public long getClaimedCount() { return claimedCount; }
+        public void setClaimedCount(long claimedCount) { this.claimedCount = claimedCount; }
+        public long getOfflineCount() { return offlineCount; }
+        public void setOfflineCount(long offlineCount) { this.offlineCount = offlineCount; }
     }
 
     /** 公告列表响应 */

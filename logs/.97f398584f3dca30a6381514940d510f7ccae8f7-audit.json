@@ -6,14 +6,19 @@
     "auditLog": "/Users/m9570/Desktop/vibecoding/compus_lost_system/demo2/git_workspace/logs/.97f398584f3dca30a6381514940d510f7ccae8f7-audit.json",
     "files": [
         {
-            "date": 1776666079290,
-            "name": "/Users/m9570/Desktop/vibecoding/compus_lost_system/demo2/git_workspace/logs/mcp-puppeteer-2026-04-20.log",
-            "hash": "8f9e5e281ef4d7b3d6f011e8a85769a2a331d80c72c56583188ab44a11d1bbbf"
+            "date": 1777919719422,
+            "name": "/Users/m9570/Desktop/vibecoding/compus_lost_system/demo2/git_workspace/logs/mcp-puppeteer-2026-05-05.log",
+            "hash": "cf764cf1b2fbd09d8d2e2a8ad141059ba65ced1ac14cdce7844c1061a114c53f"
         },
         {
-            "date": 1776781781449,
-            "name": "/Users/m9570/Desktop/vibecoding/compus_lost_system/demo2/git_workspace/logs/mcp-puppeteer-2026-04-21.log",
-            "hash": "7c171087fb214697500ef3592908f6511cb96a1fb7ae6a01bff63cc46f04c2fb"
+            "date": 1778052685161,
+            "name": "/Users/m9570/Desktop/vibecoding/compus_lost_system/demo2/git_workspace/logs/mcp-puppeteer-2026-05-06.log",
+            "hash": "83cd20219a61cd289e2098d6b469bb3ab8189aecea539e87a3185eec4b24e7f9"
+        },
+        {
+            "date": 1778146084090,
+            "name": "/Users/m9570/Desktop/vibecoding/compus_lost_system/demo2/git_workspace/logs/mcp-puppeteer-2026-05-07.log",
+            "hash": "a71892808a2e1ebd942ee395aff32b787b7ddeefbb33d948d51c201b655a66ea"
         }
     ],
     "hashType": "sha256"

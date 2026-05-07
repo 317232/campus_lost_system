@@ -1,28 +1,23 @@
 package com.campus.lostfound.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("roles")
 public class Role extends BaseEntity {
-  @TableId(type = IdType.AUTO)
-    private Long id;
 
     @TableField("role_code")
-    private String roleCode; // 角色编码：ADMIN/USER
+    private String roleCode;
 
     @TableField("role_name")
-    private String roleName; // 角色名称
+    private String roleName;
 
-    private String description; // 角色描述
+    private String description;
 
     @TableField("is_system")
-    private Boolean isSystem; // 是否系统内置角色
-
+    private Boolean isSystem;
 }

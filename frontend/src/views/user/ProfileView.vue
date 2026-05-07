@@ -252,17 +252,20 @@ const pendingClaims = computed(() =>
         <ul v-else class="item-list">
           <li v-for="c in claimState.items" :key="c.id" class="item-row">
             <div class="item-main">
-              <span class="item-title">认领 #{{ c.id }}</span>
-              <span class="item-meta">{{ c.createdAt || c.createTime || '' }}</span>
+              <span class="item-title">{{ c.itemName || '认领 #' + c.id }}</span>
+              <span class="item-meta">{{ c.createTime || '' }}</span>
             </div>
             <span :class="['audit-badge',
               c.status === 'APPROVED'      ? 'badge-ok'      :
               c.status === 'REJECTED'      ? 'badge-err'     :
-              c.status === 'PENDING'? 'badge-pending'  : '']">
+              (c.status === 'APPLIED' || c.status === 'CHECKING' || c.status === 'REVIEW_PENDING') ? 'badge-pending'  : '']">
               {{
                 c.status === 'APPROVED'       ? '已通过'   :
                 c.status === 'REJECTED'       ? '已拒绝'   :
-                c.status === 'PENDING'        ? '待审核'   : c.status || '—'
+                c.status === 'APPLIED'        ? '待审核'   :
+                c.status === 'CHECKING'       ? '核对中'   :
+                c.status === 'REVIEW_PENDING' ? '待审核'   :
+                c.status === 'CANCELLED'      ? '已取消'   : c.status || '—'
               }}
             </span>
           </li>

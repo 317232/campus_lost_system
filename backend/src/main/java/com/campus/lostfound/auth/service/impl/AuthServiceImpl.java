@@ -2,6 +2,8 @@ package com.campus.lostfound.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.campus.lostfound.auth.service.AuthService;
+
+import java.time.LocalDateTime;
 import com.campus.lostfound.common.api.ResultCode;
 import com.campus.lostfound.common.exception.BusinessException;
 import com.campus.lostfound.common.utils.JwtUtils;
@@ -37,6 +39,7 @@ public class AuthServiceImpl implements AuthService{
     private final EmailUtils emailUtils;
     private final VerifyCodeCache verifyCodeCache;
     private final TokenBlacklistCache tokenBlacklistCache;
+    private final com.campus.lostfound.auth.service.TurnstileService turnstileService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -110,6 +113,17 @@ public class AuthServiceImpl implements AuthService{
 
     @Override
     public AuthDTO.LoginResp login(AuthDTO.LoginReq req) {
+        // 0. 验证验证码
+        if (req.getCaptchaToken() != null && !req.getCaptchaToken().isBlank()) {
+            // 本地滑动拼图验证码直接通过
+            if (!"local-puzzle-verified".equals(req.getCaptchaToken())) {
+                boolean captchaValid = turnstileService.verify(req.getCaptchaToken());
+                if (!captchaValid) {
+                    throw new BusinessException(ResultCode.BAD_REQUEST, "人机验证失败，请重试");
+                }
+            }
+        }
+
         // 1. 根据账号查询用户（支持学号、邮箱或手机号登录）
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
                 .eq(User::getStudentNo, req.getAccount())
@@ -149,11 +163,16 @@ public class AuthServiceImpl implements AuthService{
         String accessToken = jwtUtils.generateAccessToken(user.getId(), user.getStudentNo(), roleCode);
         String refreshToken = jwtUtils.generateRefreshToken(user.getId());
 
+        // 5.1 更新最后登录时间
+        user.setLastLoginAt(LocalDateTime.now());
+        userMapper.updateById(user);
+
         // 6. 封装返回对象
         AuthDTO.LoginResp resp = new AuthDTO.LoginResp();
         resp.setAccessToken(accessToken);
         resp.setRefreshToken(refreshToken);
         resp.setUserId(user.getId());
+        resp.setStudentNo(user.getStudentNo());
         resp.setName(user.getName());
         resp.setAvatarUrl(user.getAvatarUrl());
         resp.setRole(roleCode);
@@ -212,6 +231,7 @@ public class AuthServiceImpl implements AuthService{
             resp.setAccessToken(newAccessToken);
             resp.setRefreshToken(newRefreshToken);
             resp.setUserId(user.getId());
+            resp.setStudentNo(user.getStudentNo());
             resp.setName(user.getName());
             resp.setAvatarUrl(user.getAvatarUrl());
             resp.setRole(roleCode);

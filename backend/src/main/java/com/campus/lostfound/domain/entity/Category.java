@@ -1,6 +1,5 @@
 package com.campus.lostfound.domain.entity;
 
-
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -11,14 +10,13 @@ import lombok.EqualsAndHashCode;
 @TableName("categories")
 public class Category extends BaseEntity {
 
-
     @TableField("biz_id")
-    private String bizId; // 分类业务编号
+    private String bizId;
 
-    private String name; // 分类名称
+    private String name;
 
     @TableField("sort_order")
-    private Integer sortOrder; // 排序值
+    private Integer sortOrder;
 
-    private String status; // 状态：ENABLED/DISABLED
+    private String status;
 }

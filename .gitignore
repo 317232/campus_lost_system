@@ -1,1 +1,15 @@
-.omx/
+# 排除所有内容
+*
+
+# 只保留以下目录和文件
+!backend/
+!frontend/
+!sql/
+!README.md
+
+# 排除 backend 中的构建缓存目录
+backend/.m2/
+backend/.mvn/
+
+# 排除 frontend 中的依赖目录
+frontend/node_modules/

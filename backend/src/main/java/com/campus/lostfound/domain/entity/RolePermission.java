@@ -1,23 +1,18 @@
 package com.campus.lostfound.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("role_permissions")
-public class RolePermission implements Serializable {
-    @TableId
-    private Long id;
+public class RolePermission extends BaseEntity {
 
+    @TableField("role_id")
     private Long roleId;
 
+    @TableField("permission_id")
     private Long permissionId;
-
-    @TableField("created_at")
-    private LocalDateTime createdAt;
 }

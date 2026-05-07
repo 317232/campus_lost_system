@@ -2,7 +2,7 @@ package com.campus.lostfound.user;
 
 import com.campus.lostfound.common.api.ApiResponse;
 import com.campus.lostfound.common.api.ResultCode;
-import com.campus.lostfound.domain.enums.UserRole;
+import com.campus.lostfound.domain.entity.UserRole;
 import com.campus.lostfound.security.SecurityUserUtils;
 import com.campus.lostfound.user.dto.UpdateProfileRequest;
 import com.campus.lostfound.user.dto.UserDTO;
@@ -136,7 +136,7 @@ public class ProfileController {
         var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getAuthorities() != null) {
             return authentication.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_" + UserRole.ADMIN.name()));
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
         }
         return false;
     }

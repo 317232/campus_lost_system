@@ -110,7 +110,7 @@ public class ProfileServiceImpl implements ProfileService {
     public List<UserDTO.UserItemResp> getUserLostItems(Long userId) {
         LambdaQueryWrapper<Item> qw = new LambdaQueryWrapper<>();
         qw.eq(Item::getOwnerId, userId);
-        qw.eq(Item::getScene, "lost");
+        qw.eq(Item::getScene, "LOST");
         qw.orderByDesc(Item::getCreateTime);
         return itemMapper.selectList(qw)
                 .stream()
@@ -123,7 +123,7 @@ public class ProfileServiceImpl implements ProfileService {
     public List<UserDTO.UserItemResp> getUserFoundItems(Long userId) {
         LambdaQueryWrapper<Item> qw = new LambdaQueryWrapper<>();
         qw.eq(Item::getOwnerId, userId);
-        qw.eq(Item::getScene, "found");
+        qw.eq(Item::getScene, "FOUND");
         qw.orderByDesc(Item::getCreateTime);
         return itemMapper.selectList(qw)
                 .stream()
@@ -220,7 +220,7 @@ public class ProfileServiceImpl implements ProfileService {
             for (RolePermission rp : getRolePermissions(ur.getRoleId())) {
                 Permission perm = permissionMapper.selectById(rp.getPermissionId());
                 if (perm != null) {
-                    permissions.add(perm.getCode());
+                    permissions.add(perm.getPermCode());
                 }
             }
         }
@@ -248,7 +248,7 @@ public class ProfileServiceImpl implements ProfileService {
         resp.setBizId(item.getBizId());
         resp.setTitle(item.getTitle());
         resp.setItemName(item.getItemName());
-        resp.setCategory(item.getCategory());
+        resp.setCategory(null);
         resp.setLocation(item.getLocation());
         resp.setStatus(item.getStatus());
         resp.setCreateTime(item.getCreateTime());

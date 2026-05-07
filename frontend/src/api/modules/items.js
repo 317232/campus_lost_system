@@ -19,12 +19,28 @@ const itemApi = {
       .then(unwrap);
   },
 
+  getLostItems(params = {}) {
+    return this.getItems('lost', params);
+  },
+
+  getFoundItems(params = {}) {
+    return this.getItems('found', params);
+  },
+
   /**
    * 获取物品详情
    * @param {number} id - 物品ID
    */
   getItemDetail(id) {
     return api.get(`/items/${id}`).then(unwrap);
+  },
+
+  getLostDetail(id) {
+    return this.getItemDetail(id);
+  },
+
+  getFoundDetail(id) {
+    return this.getItemDetail(id);
   },
 
   /**
@@ -79,6 +95,15 @@ const itemApi = {
    */
   getMatches(id, limit = 3) {
     return api.get(`/items/${id}/matches`, { params: { limit } }).then(unwrap);
+  },
+
+  /**
+   * 更新物品状态（仅物品主人或管理员可调用）
+   * @param {number} id - 物品ID
+   * @param {string} status - 目标状态：CLAIMED/FOUND_BACK/OFFLINE 等
+   */
+  updateItemStatus(id, status) {
+    return api.put(`/items/${id}/status`, { status }).then(unwrap);
   },
 
   // ========== 文件上传 ==========

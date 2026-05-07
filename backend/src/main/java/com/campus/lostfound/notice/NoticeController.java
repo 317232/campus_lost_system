@@ -3,7 +3,8 @@ package com.campus.lostfound.notice;
 import com.campus.lostfound.common.api.ApiResponse;
 import com.campus.lostfound.common.api.ResultCode;
 import com.campus.lostfound.notice.dto.NoticeDTO;
-import com.campus.lostfound.notice.service.NoticeService;
+import com.campus.lostfound.notice.service.AnnouncementService;
+import com.campus.lostfound.security.SecurityUserUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +23,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 @RequestMapping("/api/notices")
 public class NoticeController {
 
-    private final NoticeService noticeService;
+    private final AnnouncementService noticeService;
+    private final SecurityUserUtils securityUserUtils;
 
-    public NoticeController(NoticeService noticeService) {
+    public NoticeController(AnnouncementService noticeService, SecurityUserUtils securityUserUtils) {
         this.noticeService = noticeService;
+        this.securityUserUtils = securityUserUtils;
     }
 
     @GetMapping
@@ -50,6 +53,10 @@ public class NoticeController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> create(@Valid @RequestBody NoticeDTO.CreateNoticeReq request) {
+        if (!securityUserUtils.hasRole("ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.failure(ResultCode.FORBIDDEN, "需要管理员权限"));
+        }
         try {
             noticeService.createNotice(request);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -62,6 +69,10 @@ public class NoticeController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> update(@PathVariable Long id, @Valid @RequestBody NoticeDTO.UpdateNoticeReq request) {
+        if (!securityUserUtils.hasRole("ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.failure(ResultCode.FORBIDDEN, "需要管理员权限"));
+        }
         request.setId(id);
         boolean updated = noticeService.updateNotice(request);
         if (updated) {
@@ -73,6 +84,10 @@ public class NoticeController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        if (!securityUserUtils.hasRole("ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.failure(ResultCode.FORBIDDEN, "需要管理员权限"));
+        }
         boolean deleted = noticeService.deleteNotice(id);
         if (deleted) {
             return ResponseEntity.ok(ApiResponse.success(null));

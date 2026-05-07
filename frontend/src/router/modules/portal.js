@@ -5,6 +5,8 @@ import FoundListView from '@/views/user/FoundListView.vue'
 import HomeView from '@/views/user/HomeView.vue'
 import LostDetailView from '@/views/user/LostDetailView.vue'
 import LostListView from '@/views/user/LostListView.vue'
+import MyReportsView from '@/views/user/MyReportsView.vue'
+import NoticeDetailView from '@/views/user/NoticeDetailView.vue'
 import NoticeListView from '@/views/user/NoticeListView.vue'
 import ProfileView from '@/views/user/ProfileView.vue'
 import PublishView from '@/views/user/PublishView.vue'
@@ -24,7 +26,9 @@ export const portalRoutes = [
       { path: 'claims', name: 'claims', component: ClaimsView, meta: { requiresAuth: true } },
       { path: 'profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
       { path: 'report', name: 'report', component: ReportView, meta: { requiresAuth: true } },
+      { path: 'my-reports', name: 'my-reports', component: MyReportsView, meta: { requiresAuth: true } },
       { path: 'notices', name: 'notices', component: NoticeListView },
+      { path: 'notices/:id', name: 'notice-detail', component: NoticeDetailView },
     ],
   },
 ]

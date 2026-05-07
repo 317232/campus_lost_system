@@ -37,6 +37,7 @@ public class AuthDTO {
         private String account;
         @NotBlank(message = "密码不能为空")
         private String password;
+        private String captchaToken;
     }
 
     @Data
@@ -44,6 +45,7 @@ public class AuthDTO {
         private String accessToken;
         private String refreshToken;
         private Long userId;
+        private String studentNo;
         private String name;
         private String avatarUrl;
         private String role;

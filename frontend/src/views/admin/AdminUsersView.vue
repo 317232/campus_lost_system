@@ -112,11 +112,11 @@ async function deleteUser(user) {
 
 // ─── 禁用 / 启用 ───────────────────────────────────────
 async function toggleStatus(user) {
-  const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+  const newStatus = user.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'
   loadingId.value = user.id
   try {
     await adminApi.updateUserStatus(user.id, newStatus)
-    notify(`已${newStatus === 'INACTIVE' ? '禁用' : '启用'}用户：${user.name || user.studentNo}`)
+    notify(`已${newStatus === 'DISABLED' ? '禁用' : '启用'}用户：${user.name || user.studentNo}`)
     await usersState.reload()
   } catch (e) {
     notify(e?.response?.data?.message || e?.message || '操作失败', true)

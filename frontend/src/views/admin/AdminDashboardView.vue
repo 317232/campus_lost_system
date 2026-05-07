@@ -22,7 +22,7 @@ const stats = computed(() =>
         <h2>管理员总览</h2>
       </div>
     </div>
-    <p v-if="overviewState.error" class="feedback feedback-error">统计接口不可用，请联系管理员。</p>
+    <p v-if="overviewState.error" class="feedback feedback-error">统计接口不可用，当前显示为演示数据。</p>
     <div class="stats-grid">
       <article v-for="stat in stats" :key="stat.label" class="stat-card admin-card">
         <p>{{ stat.label }}</p>

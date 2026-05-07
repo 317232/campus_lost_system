@@ -57,4 +57,26 @@ public class ClaimController {
                 .body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
         }
     }
+
+    @PostMapping("/claims/apply")
+    public ResponseEntity<ApiResponse<Void>> applyClaim(@Valid @RequestBody ClaimDTO.ClaimApplyReq request) {
+        try {
+            claimService.applyClaim(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(null));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
+        }
+    }
+
+    @GetMapping("/users/me/claim-applications")
+    public ResponseEntity<ApiResponse<List<ClaimDTO.MyClaimVO>>> myClaimApplications() {
+        try {
+            return ResponseEntity.ok(ApiResponse.success(claimService.getMyClaimApplications()));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
+        }
+    }
 }

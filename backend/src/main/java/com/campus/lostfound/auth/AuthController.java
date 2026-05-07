@@ -33,7 +33,7 @@ public class AuthController {
             authService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(null));
-        } catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException | com.campus.lostfound.common.exception.BusinessException exception) {
             return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
         }
     }
@@ -43,7 +43,7 @@ public class AuthController {
         try {
             LoginResp loginResp = authService.login(request);
             return ResponseEntity.ok(ApiResponse.success(loginResp));
-        } catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException | com.campus.lostfound.common.exception.BusinessException exception) {
             return ResponseEntity.badRequest().body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
         }
     }

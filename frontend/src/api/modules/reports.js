@@ -16,8 +16,8 @@ const reportApi = {
   /**
    * 获取我的举报记录
    */
-  getMyReports(page = 1, pageSize = 10) {
-    return api.get("/reports", { params: { pageNum: page, pageSize } }).then(unwrap);
+  getMyReports(page = 1, pageSize = 10, status) {
+    return api.get("/reports/me", { params: { pageNum: page, pageSize, status } }).then(unwrap);
   },
 
   /**

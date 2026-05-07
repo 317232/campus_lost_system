@@ -2,10 +2,12 @@ package com.campus.lostfound.report.service.Impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.campus.lostfound.common.api.PageResponse;
 import com.campus.lostfound.domain.entity.Report;
 import com.campus.lostfound.report.dto.ReportDTO;
 import com.campus.lostfound.report.service.ReportService;
 import com.campus.lostfound.mapper.ReportMapper;
+import com.campus.lostfound.security.SecurityUserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -19,6 +21,9 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     private ReportMapper reportMapper;
+
+    @Autowired
+    private SecurityUserUtils securityUserUtils;
 
     @Override
     public Page<ReportDTO.ReportResp> getReportsPage(Integer pageNum, Integer pageSize, String status, String targetType) {
@@ -95,6 +100,33 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public boolean deleteReport(Long id) {
         return reportMapper.deleteById(id) > 0;
+    }
+
+    @Override
+    public PageResponse<ReportDTO.ReportResp> getMyReports(Integer pageNum, Integer pageSize, String status) {
+        Long userId = securityUserUtils.getCurrentUserId();
+        if (userId == null) {
+            throw new IllegalArgumentException("请先登录后再查看举报记录");
+        }
+
+        Page<Report> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Report> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Report::getReporterId, userId);
+
+        if (StringUtils.hasText(status)) {
+            queryWrapper.eq(Report::getStatus, status);
+        }
+
+        queryWrapper.orderByDesc(Report::getCreateTime);
+
+        Page<Report> reportPage = reportMapper.selectPage(page, queryWrapper);
+
+        List<ReportDTO.ReportResp> dtoList = reportPage.getRecords()
+            .stream()
+            .map(this::convertToDto)
+            .collect(Collectors.toList());
+
+        return new PageResponse<>(dtoList, reportPage.getTotal(), pageNum, pageSize);
     }
 
     private ReportDTO.ReportResp convertToDto(Report report) {

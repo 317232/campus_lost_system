@@ -1,6 +1,7 @@
 package com.campus.lostfound.claim.service;
 
 import com.campus.lostfound.claim.dto.ClaimDTO;
+import com.campus.lostfound.common.api.PageResponse;
 import java.util.List;
 
 public interface ClaimService {
@@ -15,4 +16,10 @@ public interface ClaimService {
     void createClaim(ClaimDTO.CreateClaimReq request);
 
     List<ClaimDTO.ClaimResp> getMyClaims();
+
+    /** 用户提交认领申请 */
+    void applyClaim(ClaimDTO.ClaimApplyReq request);
+
+    /** 用户查看我的认领申请列表 */
+    List<ClaimDTO.MyClaimVO> getMyClaimApplications();
 }

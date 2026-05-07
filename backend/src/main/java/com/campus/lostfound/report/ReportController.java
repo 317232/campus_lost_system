@@ -1,6 +1,7 @@
 package com.campus.lostfound.report;
 
 import com.campus.lostfound.common.api.ApiResponse;
+import com.campus.lostfound.common.api.PageResponse;
 import com.campus.lostfound.common.api.ResultCode;
 import com.campus.lostfound.report.dto.ReportDTO;
 import com.campus.lostfound.report.service.ReportService;
@@ -79,5 +80,22 @@ public class ReportController {
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(ApiResponse.failure(ResultCode.NOT_FOUND, "删除失败，记录可能不存在"));
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // 用户查看自己的举报记录 → /api/reports/me
+    // ════════════════════════════════════════════════════════════
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<PageResponse<ReportDTO.ReportResp>>> myReports(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String status) {
+        try {
+            return ResponseEntity.ok(ApiResponse.success(reportService.getMyReports(pageNum, pageSize, status)));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.failure(ResultCode.BAD_REQUEST, exception.getMessage()));
+        }
     }
 }

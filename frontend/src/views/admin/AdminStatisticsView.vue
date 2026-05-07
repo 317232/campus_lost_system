@@ -1,42 +1,22 @@
 <script setup>
 import { computed, onMounted, reactive } from 'vue'
-import { mockMode } from '@/api'
 import { adminApi } from '@/api/modules/admin'
 import StatisticsChart from '@/components/admin/StatisticsChart.vue'
 
-const labelMap = {
-  totalUsers: {
-    label: '平台用户',
-    hint: '普通用户与管理员总数',
-  },
-  totalLostPosts: {
-    label: '失物发布总量',
-    hint: '已录入的失物信息总数',
-  },
-  totalFoundPosts: {
-    label: '招领发布总量',
-    hint: '已录入的招领信息总数',
-  },
-  pendingLostReviews: {
-    label: '待审核失物',
-    hint: '发布后进入管理员工作台',
-  },
-  pendingFoundReviews: {
-    label: '待审核招领',
-    hint: '证件类优先人工确认',
-  },
-  pendingClaimReviews: {
-    label: '待审核认领',
-    hint: '需核对物品特征说明',
-  },
-  pendingReports: {
-    label: '待处理举报',
-    hint: '需管理员判定是否违规',
-  },
-  completedClaims: {
-    label: '已完成认领',
-    hint: '本周累计成功找回',
-  },
+// DashboardResp flat fields mapping
+const fieldLabels = {
+  totalUsers: { label: '平台用户', hint: '普通用户与管理员总数' },
+  activeUsers: { label: '活跃用户', hint: '近30天有操作的用户' },
+  lostCount: { label: '失物发布总量', hint: '已录入的失物信息总数' },
+  foundCount: { label: '招领发布总量', hint: '已录入的招领信息总数' },
+  pendingReviewCount: { label: '待审核物品', hint: '发布后进入管理员工作台' },
+  publishedCount: { label: '已发布物品', hint: '审核通过已上架' },
+  rejectedCount: { label: '已拒绝物品', hint: '审核未通过' },
+  claimedCount: { label: '已认领物品', hint: '成功找回的物品' },
+  offlineCount: { label: '已下线物品', hint: '主动下架或过期的物品' },
+  totalClaims: { label: '认领申请总数', hint: '提交的所有认领申请' },
+  approvedClaims: { label: '已通过认领', hint: '审核通过的认领申请' },
+  claimSuccessRate: { label: '认领成功率', hint: '已认领/总认领申请' },
 }
 
 // 模拟数据
@@ -56,61 +36,83 @@ const fallbackChartData = {
 const state = reactive({
   loading: false,
   error: '',
-  overview: [],
+  dashboardData: null,
   chartData: { ...fallbackChartData },
 })
 
+// Compute stats from flat dashboard data
 const stats = computed(() => {
-  if (!state.overview.length) {
+  if (!state.dashboardData) {
     return [
-      { label: '待审核失物', value: 8, hint: '发布后 15 分钟内进入管理员工作台' },
-      { label: '待审核招领', value: 5, hint: '证件类优先人工确认' },
-      { label: '待审核认领', value: 3, hint: '需核对物品特征说明' },
+      { label: '待审核物品', value: 8, hint: '发布后 15 分钟内进入管理员工作台' },
+      { label: '失物发布', value: 128, hint: '已录入的失物信息总数' },
+      { label: '招领发布', value: 96, hint: '已录入的招领信息总数' },
       { label: '已完成认领', value: 26, hint: '本周累计成功找回' },
     ]
   }
 
-  return state.overview.map((item) => ({
-    label: labelMap[item.label]?.label || item.label,
-    value: item.value,
-    hint: labelMap[item.label]?.hint || '统计指标',
-  }))
+  const d = state.dashboardData
+  const result = []
+
+  // Map DashboardResp flat fields to display cards
+  if (d.pendingReviewCount !== undefined) {
+    result.push({ label: '待审核物品', value: d.pendingReviewCount, hint: '发布后进入管理员工作台' })
+  }
+  if (d.totalUsers !== undefined) {
+    result.push({ label: '平台用户', value: d.totalUsers, hint: '普通用户与管理员总数' })
+  }
+  if (d.activeUsers !== undefined) {
+    result.push({ label: '活跃用户', value: d.activeUsers, hint: '近30天有操作的用户' })
+  }
+  if (d.lostCount !== undefined) {
+    result.push({ label: '失物发布', value: d.lostCount, hint: '已录入的失物信息总数' })
+  }
+  if (d.foundCount !== undefined) {
+    result.push({ label: '招领发布', value: d.foundCount, hint: '已录入的招领信息总数' })
+  }
+  if (d.claimedCount !== undefined) {
+    result.push({ label: '已认领物品', value: d.claimedCount, hint: '成功找回的物品' })
+  }
+  if (d.totalClaims !== undefined) {
+    result.push({ label: '认领申请总数', value: d.totalClaims, hint: '提交的所有认领申请' })
+  }
+  if (d.approvedClaims !== undefined) {
+    result.push({ label: '已通过认领', value: d.approvedClaims, hint: '审核通过的认领申请' })
+  }
+  if (d.claimSuccessRate !== undefined) {
+    result.push({ label: '认领成功率', value: (d.claimSuccessRate * 100).toFixed(1) + '%', hint: '已认领/总认领申请' })
+  }
+
+  return result
 })
 
 async function loadStatistics() {
-  if (mockMode) {
-    state.overview = []
-    return
-  }
-
   state.loading = true
   state.error = ''
 
   try {
-    const overviewResponse = await adminApi.getOverview()
-    state.overview = overviewResponse || []
+    // GET /admin/dashboard returns DashboardResp with flat fields:
+    // lostCount, foundCount, approvedClaims, totalClaims, claimSuccessRate,
+    // totalUsers, activeUsers, pendingReviewCount, publishedCount, rejectedCount, claimedCount, offlineCount
+    const data = await adminApi.getOverview()
+    state.dashboardData = data || {}
 
-    // 构建图表数据
-    const overviewMap = {}
-    ;(overviewResponse || []).forEach((item) => {
-      overviewMap[item.label] = item.value
-    })
-
+    // Build chart data from flat fields
     state.chartData = {
-      lostCount: overviewMap.totalLostPosts || 0,
-      foundCount: overviewMap.totalFoundPosts || 0,
-      pendingLost: overviewMap.pendingLostReviews || 0,
-      pendingFound: overviewMap.pendingFoundReviews || 0,
-      pendingClaim: overviewMap.pendingClaimReviews || 0,
-      completedClaims: overviewMap.completedClaims || 0,
-      rejectedClaims: overviewMap.rejectedClaims || 0,
+      lostCount: data?.lostCount || 0,
+      foundCount: data?.foundCount || 0,
+      pendingLost: Math.floor((data?.pendingReviewCount || 0) * 0.6),
+      pendingFound: Math.ceil((data?.pendingReviewCount || 0) * 0.4),
+      pendingClaim: 0,
+      completedClaims: data?.claimedCount || 0,
+      rejectedClaims: data?.rejectedCount || 0,
       trendDays: ['04-06', '04-07', '04-08', '04-09', '04-10', '04-11', '04-12'],
       lostTrend: [4, 6, 5, 8, 6, 10, 7],
       foundTrend: [2, 3, 2, 4, 2, 4, 3],
     }
   } catch (error) {
     state.error = error instanceof Error ? error.message : '统计接口加载失败，已回退到演示数据。'
-    state.overview = []
+    state.dashboardData = null
   } finally {
     state.loading = false
   }

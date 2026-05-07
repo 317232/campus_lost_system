@@ -8,8 +8,13 @@ import com.campus.lostfound.auth.dto.AuthDTO.ForgotPasswordReq;
 import com.campus.lostfound.auth.service.impl.AuthServiceImpl;
 import com.campus.lostfound.common.api.ResultCode;
 import com.campus.lostfound.common.exception.BusinessException;
+import com.campus.lostfound.common.utils.VerifyCodeCache;
+import com.campus.lostfound.common.utils.TokenBlacklistCache;
+import com.campus.lostfound.domain.entity.Role;
 import com.campus.lostfound.domain.entity.User;
+import com.campus.lostfound.mapper.RoleMapper;
 import com.campus.lostfound.mapper.UserMapper;
+import com.campus.lostfound.mapper.UserRoleMapper;
 import com.campus.lostfound.common.utils.JwtUtils;
 import com.campus.lostfound.common.utils.EmailUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,10 +37,25 @@ class AuthDemoServiceTest {
     private UserMapper userMapper;
 
     @Mock
+    private UserRoleMapper userRoleMapper;
+
+    @Mock
+    private RoleMapper roleMapper;
+
+    @Mock
     private JwtUtils jwtUtils;
 
     @Mock
     private EmailUtils emailUtils;
+
+    @Mock
+    private VerifyCodeCache verifyCodeCache;
+
+    @Mock
+    private TokenBlacklistCache tokenBlacklistCache;
+
+    @Mock
+    private com.campus.lostfound.auth.service.TurnstileService turnstileService;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -61,13 +81,20 @@ class AuthDemoServiceTest {
         req.setName("新用户");
         req.setPassword("password123");
         req.setEmail("new@example.com");
+        req.setEmailCode("123456");
 
+        Role userRole = new Role();
+        userRole.setId(1L);
+        userRole.setRoleCode("USER");
+
+        when(verifyCodeCache.get("new@example.com")).thenReturn("123456");
         when(userMapper.exists(any())).thenReturn(false);
         when(userMapper.insert(any(User.class))).thenReturn(1);
+        when(roleMapper.selectOne(any())).thenReturn(userRole);
 
         assertDoesNotThrow(() -> authService.register(req));
 
-        verify(userMapper).exists(any());
+        verify(userMapper, times(2)).exists(any());
         verify(userMapper).insert(any(User.class));
     }
 
@@ -78,7 +105,9 @@ class AuthDemoServiceTest {
         req.setName("新用户");
         req.setPassword("password123");
         req.setEmail("new@example.com");
+        req.setEmailCode("123456");
 
+        when(verifyCodeCache.get("new@example.com")).thenReturn("123456");
         when(userMapper.exists(any())).thenReturn(true);
 
         BusinessException exception = assertThrows(BusinessException.class,
@@ -95,7 +124,7 @@ class AuthDemoServiceTest {
         req.setPassword("password123");
 
         when(userMapper.selectOne(any())).thenReturn(testUser);
-        when(jwtUtils.generateAccessToken(any(), any())).thenReturn("access-token");
+        when(jwtUtils.generateAccessToken(any(), any(), any())).thenReturn("access-token");
         when(jwtUtils.generateRefreshToken(any())).thenReturn("refresh-token");
 
         LoginResp resp = authService.login(req);
@@ -159,7 +188,7 @@ class AuthDemoServiceTest {
         ForgotPasswordReq req = new ForgotPasswordReq();
         req.setAccount("test@example.com");
 
-        when(userMapper.exists(any())).thenReturn(true);
+        when(userMapper.selectOne(any())).thenReturn(testUser);
         doNothing().when(emailUtils).sendVerifyCode(any(), any());
 
         assertDoesNotThrow(() -> authService.forgotPassword(req));
@@ -172,7 +201,7 @@ class AuthDemoServiceTest {
         ForgotPasswordReq req = new ForgotPasswordReq();
         req.setAccount("nonexistent@example.com");
 
-        when(userMapper.exists(any())).thenReturn(false);
+        when(userMapper.selectOne(any())).thenReturn(null);
 
         BusinessException exception = assertThrows(BusinessException.class,
             () -> authService.forgotPassword(req));
@@ -189,6 +218,7 @@ class AuthDemoServiceTest {
         req.setNewPassword("newpassword123");
 
         when(userMapper.selectOne(any())).thenReturn(testUser);
+        when(verifyCodeCache.get("reset:test@example.com")).thenReturn("123456");
         when(userMapper.updateById(testUser)).thenReturn(1);
 
         assertDoesNotThrow(() -> authService.resetPassword(req));
@@ -218,7 +248,7 @@ class AuthDemoServiceTest {
 
         when(jwtUtils.getUserIdFromToken(refreshToken)).thenReturn(1L);
         when(userMapper.selectById(1L)).thenReturn(testUser);
-        when(jwtUtils.generateAccessToken(any(), any())).thenReturn("new-access-token");
+        when(jwtUtils.generateAccessToken(any(), any(), any())).thenReturn("new-access-token");
         when(jwtUtils.generateRefreshToken(any())).thenReturn("new-refresh-token");
 
         LoginResp resp = authService.refreshToken(refreshToken);

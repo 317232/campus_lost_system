@@ -1,12 +1,11 @@
 package com.campus.lostfound.domain.entity;
 
-
 import com.baomidou.mybatisplus.annotation.TableField;
-
-
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.TableName;
+
+import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -14,24 +13,39 @@ import com.baomidou.mybatisplus.annotation.TableName;
 public class Claim extends BaseEntity {
 
     @TableField("biz_id")
-    private String bizId; // 业务编号
+    private String bizId;
 
     @TableField("item_id")
-    private Long itemId; // 物品ID
+    private Long itemId;
 
     @TableField("claimant_id")
-    private Long claimantId; // 认领人ID
+    private Long claimantId;
 
-    @TableField("draft_id")
-    private Long draftId; // 草稿ID
+    @TableField("claim_statement")
+    private String claimStatement;
 
-    @TableField("formal_proof")
-    private String formalProof; // 正式证明材料
+    @TableField("feature_proof")
+    private String featureProof;
 
-    private String contact; // 联系信息
+    private String contact;
 
-    private String status; // 状态：REVIEW_PENDING/APPROVED/REJECTED/EXPIRED/CANCELLED
+    private String status;
+
+    @TableField("description_check_result")
+    private String descriptionCheckResult;
+
+    @TableField("description_checked_by")
+    private Long descriptionCheckedBy;
+
+    @TableField("description_checked_at")
+    private LocalDateTime descriptionCheckedAt;
+
+    @TableField("reviewed_by")
+    private Long reviewedBy;
+
+    @TableField("reviewed_at")
+    private LocalDateTime reviewedAt;
 
     @TableField("audit_remark")
-    private String auditRemark; // 审核备注
+    private String auditRemark;
 }

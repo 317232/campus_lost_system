@@ -8,6 +8,9 @@ const noticeApi = {
   list() {
     return api.get("/notices").then(unwrap);
   },
+  getDetail(id) {
+    return api.get(`/notices/${id}`).then(unwrap);
+  },
 };
 
 export { noticeApi };

@@ -7,7 +7,7 @@ function unwrap(response) {
 const adminApi = {
   // ── 数据统计 ──────────────────────────────────────────────────
   getOverview() {
-    return api.get("/admin/stats/dashboard").then(unwrap);
+    return api.get("/admin/dashboard").then(unwrap);
   },
   getTrend() {
     return api.get("/admin/statistics/trend").then(unwrap);
@@ -27,6 +27,12 @@ const adminApi = {
   auditClaim(claimId, action, remark = '') {
     const auditStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED'
     return api.post('/admin/claims/audit', { claimId, auditStatus, auditRemark: remark }).then(unwrap)
+  },
+  getClaimReviewQueue(params) {
+    return api.get('/admin/claims/review', { params }).then(unwrap);
+  },
+  getClaimAuditDetail(claimId) {
+    return api.get(`/admin/claims/${claimId}`).then(unwrap);
   },
 
   // ── 用户管理 ──────────────────────────────────────────────────
@@ -75,11 +81,11 @@ const adminApi = {
   },
 
   // ── 举报处理 ──────────────────────────────────────────────────
-  getReports() {
-    return api.get("/admin/reports").then(unwrap);
+  getReports(params) {
+    return api.get("/admin/reports", { params }).then(unwrap);
   },
-  handleReport(id, payload) {
-    return api.put(`/admin/reports/${id}`, payload).then(unwrap);
+  handleReport(reportId, status, handleRemark = '') {
+    return api.post('/admin/reports/handle', { reportId, status, handleRemark }).then(unwrap);
   },
   deleteReport(id) {
     return api.delete(`/admin/reports/${id}`).then(unwrap);

@@ -41,11 +41,7 @@ function closeModal() { showModal.value = false }
 async function submitHandle() {
   formErr.value = ''; submitting.value = true
   try {
-    await adminApi.handleReport(editId.value, {
-      reportId: editId.value,
-      status: form.status,
-      handleRemark: form.handleRemark,
-    })
+    await adminApi.handleReport(editId.value, form.status, form.handleRemark)
     notify(`举报 #${editId.value} 已处理`)
     showModal.value = false
     await reportsState.reload()

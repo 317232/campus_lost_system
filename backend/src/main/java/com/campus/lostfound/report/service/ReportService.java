@@ -1,6 +1,7 @@
 package com.campus.lostfound.report.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.campus.lostfound.common.api.PageResponse;
 import com.campus.lostfound.report.dto.ReportDTO;
 
 public interface ReportService {
@@ -13,4 +14,7 @@ public interface ReportService {
     boolean updateReport(ReportDTO.UpdateReportReq request);
 
     boolean deleteReport(Long id);
+
+    /** 用户查看自己的举报记录 */
+    PageResponse<ReportDTO.ReportResp> getMyReports(Integer pageNum, Integer pageSize, String status);
 }

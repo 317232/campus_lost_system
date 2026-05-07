@@ -1,12 +1,77 @@
 <script setup>
-import { computed } from 'vue'
-import { itemApi } from '@/api/modules'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { itemApi, categoriesApi } from '@/api/modules'
 import ItemCard from '@/components/business/ItemCard.vue'
 import { useRemoteCollection } from '@/composables/useRemoteCollection'
 
-const foundState = useRemoteCollection(() => itemApi.getItems('found'), foundItems, {
-  select: (response) => response?.records || [],
+const categoriesState = useRemoteCollection(() => categoriesApi.list(), [])
+
+// Filter state
+const filters = reactive({
+  keyword: '',
+  category: '',
+  zone: '',
+  sortBy: 'time',
 })
+
+const pagination = reactive({
+  page: 1,
+  pageSize: 10,
+  total: 0,
+})
+
+function buildParams() {
+  return {
+    scene: 'found',
+    keyword: filters.keyword || undefined,
+    category: filters.category || undefined,
+    zone: filters.zone || undefined,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  }
+}
+
+const triggerKey = ref(0)
+const foundState = useRemoteCollection(
+  () => {
+    triggerKey.value
+    return itemApi.getItems('found', buildParams())
+  },
+  [],
+  {
+    select: (response) => {
+      const records = response?.records || []
+      pagination.total = response?.total || 0
+      return records
+    },
+  }
+)
+
+watch([filters, () => pagination.page], () => {
+  triggerKey.value++
+  foundState.reload()
+}, { deep: true })
+
+function handleSearch() {
+  pagination.page = 1
+  triggerKey.value++
+  foundState.reload()
+}
+
+function handlePageChange(newPage) {
+  pagination.page = newPage
+  foundState.reload()
+}
+
+function resetFilters() {
+  filters.keyword = ''
+  filters.category = ''
+  filters.zone = ''
+  filters.sortBy = 'time'
+  pagination.page = 1
+}
+
+const totalPages = computed(() => Math.ceil(pagination.total / pagination.pageSize) || 1)
 
 const displayItems = computed(() =>
   foundState.items.map((item) => ({
@@ -15,6 +80,10 @@ const displayItems = computed(() =>
     status: item.status === 'PUBLISHED' ? 'published' : item.status?.toLowerCase?.() || 'pending',
   })),
 )
+
+onMounted(() => {
+  categoriesState.reload()
+})
 </script>
 
 <template>
@@ -25,12 +94,31 @@ const displayItems = computed(() =>
         <h2>招领大厅</h2>
       </div>
       <div class="filter-row">
-        <input placeholder="按物品名称搜索" />
-        <!-- 后端传分类，下拉显示 -->
-         <!-- 证件， 电子产品，书籍资料，钥匙卡证，衣物配饰，其他 -->
-        <select><option >全部分类</option></select>
-        <!-- 地点筛选，下拉显示 -->
-        <select><option>按地点筛选</option></select>
+        <input
+          v-model="filters.keyword"
+          placeholder="按物品名称搜索"
+          @keyup.enter="handleSearch"
+        />
+        <select v-model="filters.category">
+          <option value="">全部分类</option>
+          <option v-for="cat in categoriesState.items" :key="cat" :value="cat">{{ cat }}</option>
+        </select>
+        <select v-model="filters.zone">
+          <option value="">按地点筛选</option>
+          <option value="南门">南门</option>
+          <option value="北门">北门</option>
+          <option value="东门">东门</option>
+          <option value="西门">西门</option>
+          <option value="教学楼A">教学楼A</option>
+          <option value="教学楼B">教学楼B</option>
+          <option value="图书馆">图书馆</option>
+          <option value="食堂">食堂</option>
+          <option value="操场">操场</option>
+          <option value="宿舍区">宿舍区</option>
+          <option value="其他">其他</option>
+        </select>
+        <button class="filter-btn" @click="handleSearch">搜索</button>
+        <button v-if="filters.keyword || filters.category || filters.zone" class="filter-btn reset" @click="resetFilters">重置</button>
       </div>
     </div>
     <p v-if="foundState.error" class="feedback feedback-error">招领功能不可用，请联系管理员。</p>
@@ -38,5 +126,86 @@ const displayItems = computed(() =>
     <div class="card-grid">
       <ItemCard v-for="item in displayItems" :key="item.id" :item="item" />
     </div>
+
+    <div v-if="pagination.total > 0" class="pagination">
+      <span class="pagination-info">共 {{ pagination.total }} 条</span>
+      <button :disabled="pagination.page <= 1" @click="handlePageChange(pagination.page - 1)">上一页</button>
+      <span class="pagination-current">{{ pagination.page }} / {{ totalPages }}</span>
+      <button :disabled="pagination.page >= totalPages" @click="handlePageChange(pagination.page + 1)">下一页</button>
+    </div>
   </section>
 </template>
+
+<style scoped>
+.filter-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-row input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.filter-row select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: #fff;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.filter-btn.reset {
+  background: #94a3b8;
+}
+
+.pagination {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.pagination button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.pagination-current {
+  font-size: 0.875rem;
+  color: #334155;
+  font-weight: 500;
+}
+</style>

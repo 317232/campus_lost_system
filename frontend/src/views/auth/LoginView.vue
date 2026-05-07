@@ -4,6 +4,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import NotificationToast from '@/components/common/NotificationToast.vue'
 import FormInput from '@/components/common/FormInput.vue'
+import SlidePuzzleCaptcha from '@/components/common/SlidePuzzleCaptcha.vue'
 
 const form = reactive({
   account: '',
@@ -17,6 +18,11 @@ const state = reactive({
   loading: false,
 })
 
+// 验证码状态
+const captchaToken = ref('')
+const captchaVerified = ref(false)
+const showCaptcha = ref(false)
+
 // 通知状态
 const notification = reactive({
   show: false,
@@ -24,14 +30,67 @@ const notification = reactive({
   message: ''
 })
 
-// 显示通知的函数
 const showNotification = (type, message) => {
   notification.type = type
   notification.message = message
   notification.show = true
 }
 
-// TODO: 登录表单验证规则，优化
+// 验证码回调
+function handleCaptchaVerify(token) {
+  captchaToken.value = token
+  captchaVerified.value = true
+  // 立即关闭验证码弹窗，不阻挡后续登录流程
+  showCaptcha.value = false
+  // 显示验证成功提示
+  showNotification('success', '验证成功，正在登录...')
+  performLogin()
+}
+
+function handleCaptchaError() {
+  showNotification('error', '验证码验证失败，请重试')
+}
+
+function handleCaptchaExpired() {
+  captchaVerified.value = false
+  showNotification('warning', '验证码已过期，请重新验证')
+}
+
+// 实际执行登录
+async function performLogin() {
+  try {
+    state.loading = true
+    const session = await login({
+      account: form.account,
+      password: form.password,
+      captchaToken: captchaToken.value,
+    })
+
+    showNotification('success', `登录成功，欢迎 ${session.displayName || form.account}。`)
+
+    // 关闭验证码弹窗
+    showCaptcha.value = false
+
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+
+    if (redirect) {
+      router.push(redirect)
+      return
+    }
+
+    if (session.role === 'ADMIN') {
+      router.push('/admin')
+      return
+    }
+
+    router.push('/')
+  } catch (error) {
+    showNotification('error', error instanceof Error ? error.message : '登录失败，请稍后重试。')
+  } finally {
+    state.loading = false
+  }
+}
+
 async function handleSubmit() {
   if (!form.account) {
     showNotification('error', '请输入登录账号');
@@ -59,45 +118,8 @@ async function handleSubmit() {
     return;
   }
 
-  try {
-    state.loading = true
-    const session = await login({
-      account: form.account,
-      password: form.password,
-    })
-
-    showNotification('success', `登录成功，欢迎 ${session.displayName || form.account}。`)
-
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
-
-    if (redirect) {
-      router.push(redirect)
-      return
-    }
-
-    if (session.role === 'ADMIN') {
-      router.push('/admin')
-      return
-    }
-
-    router.push('/')
-  } catch (error) {
-    showNotification('error', error instanceof Error ? error.message : '登录失败，请稍后重试。')
-  } finally {
-    state.loading = false
-  }
-}
-
-async function handleTestLoginAdmin() {
-  form.account = '2024001'
-  form.password = '123456'
-  await handleSubmit()
-}
-
-async function handleTestLoginUser() {
-  form.account = '2021001'
-  form.password = '123456'
-  await handleSubmit()
+  // 显示验证码弹窗
+  showCaptcha.value = true
 }
 </script>
 
@@ -117,10 +139,10 @@ async function handleTestLoginUser() {
       <div class="form_sub">
         <FormInput label="登录账号" v-model="form.account" placeholder="学号 / 手机号 / 邮箱" />
         <FormInput type="password" label="密码" v-model="form.password" placeholder="请输入密码" />
+        <div class="form-item form-item-link">
+          <RouterLink :to="{ name: 'forgot-password' }" class="forgot-link">忘记密码？</RouterLink>
+        </div>
         <div class="form-item">
-          <!-- @TODO： 后续删除 -->
-          <button class="login-btn" type="button" @click="handleTestLoginAdmin">使用管理员数据</button>
-          <button class="login-btn" type="button" @click="handleTestLoginUser">使用普通数据</button>
           <button class="login-btn" type="submit" :disabled="state.loading">
             {{ state.loading ? '登录中...' : '登录并进入系统' }}
           </button>
@@ -128,5 +150,37 @@ async function handleTestLoginUser() {
       </div>
     </form>
 
+    <!-- 验证码弹窗 -->
+    <div v-if="showCaptcha" class="captcha-modal">
+      <div class="captcha-overlay" @click="showCaptcha = false"></div>
+      <div class="captcha-dialog">
+        <h3>安全验证</h3>
+        <p class="captcha-hint">请完成以下验证以继续登录</p>
+        <SlidePuzzleCaptcha
+          @verify="handleCaptchaVerify"
+          @error="handleCaptchaError"
+          @expired="handleCaptchaExpired"
+        />
+        <button class="captcha-close-btn" @click="showCaptcha = false">取消</button>
+      </div>
+    </div>
+
   </section>
 </template>
+
+<style scoped>
+.form-item-link {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.forgot-link {
+  font-size: 0.875rem;
+  color: #6366f1;
+  text-decoration: none;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+</style>

@@ -2,7 +2,7 @@ spring:
   application:
     name: lostfound-backend
   datasource:
-    url: jdbc:mysql://localhost:3306/campus_lost_found?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/compus_lost_found?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: 12345678
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -27,12 +27,14 @@ mybatis-plus:
     db-config:
       id-type: auto
 server:
-  port: 8080
+  port: 8081
 
 app:
   security:
     login-failure-captcha-threshold: 3
     token-prefix: demo-jwt
+  turnstile:
+    secret-key: 0x4AAAAAADHyVj1OC8oOenRTR06z1zeOXQ0
   jwt:
     issuer: campus-lostfound
     secret: Y2FtcHVzLWxvc3QtZm91bmQtY291cnNld29yay1kZW1vLXNlY3JldC1rZXktMjAyNg==

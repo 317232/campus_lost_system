@@ -1744,6 +1744,69 @@ textarea {
   cursor: not-allowed;
 }
 
+/* ==================== 验证码弹窗样式 ==================== */
+.captcha-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.captcha-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.captcha-dialog {
+  position: relative;
+  background: #fff;
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.captcha-dialog h3 {
+  margin: 0 0 0.5rem;
+  color: var(--text-strong);
+  font-size: 1.3rem;
+}
+
+.captcha-hint {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.captcha-close-btn {
+  margin-top: 1rem;
+  padding: 0.6rem 1.5rem;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.captcha-close-btn:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
 /* ==================== 通用组件样式 ==================== */
 .eyebrow {
   margin: 0 0 0.5rem;

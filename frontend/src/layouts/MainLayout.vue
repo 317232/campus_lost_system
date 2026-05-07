@@ -1,20 +1,17 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useRemoteCollection } from '@/composables/useRemoteCollection'
 import { useAuth } from '@/composables/useAuth'
 import { useRoute, useRouter } from 'vue-router'
-import { categories } from '@/data/catalog'
-import { categoriesApi } from '@/api/modules/categories'
 
 const route = useRoute()
 const router = useRouter()
 const searchKeyword = ref('')
 const isMobileMenuOpen = ref(false)
+const claimBtnLoading = ref(false)
 const { userStore, isAuthenticated, logout } = useAuth()
-const categoriesState = useRemoteCollection(() => categoriesApi.list(), categories)
 
 // 子页面（详情页/表单页）需要显示顶部导航栏
-const subPageNames = ['lost-detail', 'found-detail', 'publish', 'report', 'claims', 'profile']
+const subPageNames = ['lost-detail', 'found-detail', 'publish', 'report', 'claims', 'profile', 'my-reports']
 const showSubNav = computed(() => subPageNames.includes(route.name))
 
 // 上一页标题
@@ -26,6 +23,7 @@ const backPageName = computed(() => {
     'report': '举报',
     'claims': '认领进度',
     'profile': '个人中心',
+    'my-reports': '我的举报',
   }
   return nameMap[route.name] || '返回'
 })
@@ -58,6 +56,17 @@ const handleSearch = () => {
     router.push({ path: '/lost', query: { q: searchKeyword.value } })
   }
 }
+
+function handleClaimsClick() {
+  if (!isAuthenticated.value) {
+    router.push({ name: 'login', query: { redirect: '/claims' } })
+    return
+  }
+  claimBtnLoading.value = true
+  router.push('/claims')
+  // Reset loading after navigation
+  setTimeout(() => { claimBtnLoading.value = false }, 300)
+}
 </script>
 
 <template>
@@ -84,6 +93,8 @@ const handleSearch = () => {
                 <span class="user-avatar">{{ accountInitial }}</span>
                 <span class="user-name">{{ accountDisplayName }}</span>
               </RouterLink>
+              <span class="nav-divider">|</span>
+              <RouterLink class="auth-link" to="/my-reports">举报记录</RouterLink>
               <span class="nav-divider">|</span>
               <button class="logout-btn" @click="logout(); router.push('/login')">退出</button>
             </template>
@@ -121,11 +132,10 @@ const handleSearch = () => {
           </div>
 
           <div class="brand-actions">
-            <RouterLink class="action-btn claim-btn" to="/claims">
+            <button class="action-btn claim-btn" :class="{ 'is-loading': claimBtnLoading }" @click="handleClaimsClick">
               <span class="action-icon">📋</span>
-              <!-- 点击认领显示请先登录的提示，同样点击发布信息也是 -->
               <span class="action-text">我的认领单</span>
-            </RouterLink>
+            </button>
             <RouterLink class="action-btn publish-btn" to="/publish/lost">
               <span class="action-icon">➕</span>
               <span>发布信息</span>
@@ -398,6 +408,11 @@ const handleSearch = () => {
 .claim-btn:hover {
   background: #f0ebe3;
   border-color: rgba(79, 60, 41, 0.2);
+}
+
+.claim-btn.is-loading {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .publish-btn {

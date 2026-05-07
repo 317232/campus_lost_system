@@ -3,13 +3,13 @@ import { computed } from 'vue'
 import { itemApi, noticeApi } from '@/api/modules'
 import ItemCard from '@/components/business/ItemCard.vue'
 import { useRemoteCollection } from '@/composables/useRemoteCollection'
-import { dashboardStats, foundItems, lostItems, notices } from '../../data/catalog'
+import { dashboardStats, notices } from '../../data/catalog'
 
 const noticeState = useRemoteCollection(() => noticeApi.list(), notices)
-const lostState = useRemoteCollection(() => itemApi.getLostItems(), lostItems, {
+const lostState = useRemoteCollection(() => itemApi.getLostItems(), [], {
   select: (response) => response?.records || [],
 })
-const foundState = useRemoteCollection(() => itemApi.getFoundItems(), foundItems, {
+const foundState = useRemoteCollection(() => itemApi.getFoundItems(), [], {
   select: (response) => response?.records || [],
 })
 
@@ -72,6 +72,7 @@ const featuredFound = computed(() =>
         <span>{{ stat.hint }}</span>
       </article>
     </div>
+    <p class="demo-badge">演示统计 / 非实时后端数据</p>
   </section>
 
   <section class="market-banner">
@@ -87,7 +88,10 @@ const featuredFound = computed(() =>
       <h3>近期失物</h3>
       <RouterLink to="/lost">查看全部</RouterLink>
     </div>
-    <div class="market-card-grid">
+    <p v-if="lostState.error" class="feedback feedback-error">失物加载失败，请刷新后重试。</p>
+    <p v-else-if="lostState.loading" class="feedback feedback-loading">加载中...</p>
+    <p v-else-if="featuredLost.length === 0" class="feedback feedback-empty">暂无失物信息</p>
+    <div v-else class="market-card-grid">
       <ItemCard v-for="item in featuredLost" :key="item.id" :item="item" />
     </div>
   </section>
@@ -97,7 +101,10 @@ const featuredFound = computed(() =>
       <h3>招领信息</h3>
       <RouterLink to="/found">查看全部</RouterLink>
     </div>
-    <div class="market-card-grid">
+    <p v-if="foundState.error" class="feedback feedback-error">招领信息加载失败，请刷新后重试。</p>
+    <p v-else-if="foundState.loading" class="feedback feedback-loading">加载中...</p>
+    <p v-else-if="featuredFound.length === 0" class="feedback feedback-empty">暂无招领信息</p>
+    <div v-else class="market-card-grid">
       <ItemCard v-for="item in featuredFound" :key="item.id" :item="item" />
     </div>
   </section>
@@ -137,3 +144,17 @@ const featuredFound = computed(() =>
     </article>
   </section>
 </template>
+
+<style scoped>
+.demo-badge {
+  text-align: center;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: #d97706;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+</style>

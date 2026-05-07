@@ -33,9 +33,11 @@ const form = reactive({
 })
 
 const imageInput = ref('')
+const fileInput = ref(null)
 const submitting = ref(false)
 const errorMsg = ref('')
 const successMsg = ref('')
+const uploadingImages = ref(false)
 
 function addImage() {
   const url = imageInput.value.trim()
@@ -47,6 +49,43 @@ function addImage() {
 
 function removeImage(idx) {
   form.images.splice(idx, 1)
+}
+
+async function handleFileSelect(event) {
+  const files = event.target.files
+  if (!files || files.length === 0) return
+
+  uploadingImages.value = true
+  try {
+    for (const file of Array.from(files)) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        errorMsg.value = '只支持上传图片文件'
+        return
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        errorMsg.value = '图片大小不能超过5MB'
+        return
+      }
+
+      const uploadedUrl = await itemApi.uploadFile(file)
+      if (uploadedUrl && !form.images.includes(uploadedUrl)) {
+        form.images.push(uploadedUrl)
+      }
+    }
+  } catch (e) {
+    errorMsg.value = e?.message || '图片上传失败，请重试'
+  } finally {
+    uploadingImages.value = false
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
+  }
+}
+
+function triggerFileInput() {
+  fileInput.value?.click()
 }
 
 async function submit() {
@@ -165,10 +204,24 @@ async function submit() {
       </label>
 
       <label class="full-span">
-        图片链接
+        图片
         <div class="image-input-row">
           <input v-model="imageInput" placeholder="输入图片URL后点击添加" />
-          <button type="button" class="secondary small" @click="addImage">添加</button>
+          <button type="button" class="secondary small" @click="addImage">添加链接</button>
+        </div>
+        <div class="image-upload-row">
+          <input
+            ref="fileInput"
+            type="file"
+            accept="image/*"
+            multiple
+            style="display: none"
+            @change="handleFileSelect"
+          />
+          <button type="button" class="upload-btn" :disabled="uploadingImages" @click="triggerFileInput">
+            {{ uploadingImages ? '上传中...' : '上传图片' }}
+          </button>
+          <span class="upload-hint">支持 JPG/PNG/GIF，最大 5MB</span>
         </div>
         <div v-if="form.images.length > 0" class="image-preview-list">
           <div v-for="(img, idx) in form.images" :key="idx" class="image-preview-item">
@@ -415,5 +468,38 @@ h2 {
   background: rgba(239, 246, 255, 0.95);
   font-weight: 600;
   text-decoration: none;
+}
+
+.image-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.upload-btn {
+  padding: 0.5rem 1rem;
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.upload-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.upload-hint {
+  font-size: 0.75rem;
+  color: #94a3b8;
 }
 </style>
